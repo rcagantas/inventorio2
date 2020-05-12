@@ -199,6 +199,22 @@ class InvState with ChangeNotifier {
     });
   }
 
+  Future<InvProduct> fetchProduct(String code) async {
+
+    if (getProduct(code).unset) {
+      String invMetaId = invUser.currentInventoryId;
+
+      var product = await _invStoreService.fetchProduct(code);
+      var localProduct = await _invStoreService.fetchLocalProduct(invMetaId, code);
+      _onInvProductUpdate(product);
+      _onInvLocalProductUpdate(localProduct);
+
+      return getProduct(code);
+    }
+
+    return getProduct(code);
+  }
+
   void _onInvProductUpdate(InvProduct invProduct) {
     if (invProduct.unset) {
       return;
@@ -242,11 +258,6 @@ class InvState with ChangeNotifier {
 
     _subscribeToProduct(invUser.currentInventoryId, code);
     return !local.unset ? local : master;}
-
-  Future<InvProduct> fetchProduct(String code) async {
-    await _subscribeToProduct(this.selectedInvMeta().uuid, code);
-    return getProduct(code);
-  }
 
   void _itemValidationCheck(InvItem item) {
     String msg;

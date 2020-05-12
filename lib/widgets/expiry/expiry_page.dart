@@ -42,7 +42,7 @@ class _ExpiryPageState extends State<ExpiryPage> {
             child: Icon(Icons.save),
             onPressed: () async {
 
-              var product = await invState.fetchProduct(itemBuilder.code);
+              var product = invState.getProduct(itemBuilder.code);
               if (product.unset) {
                 await Navigator.pushNamed(context, ProductEditPage.ROUTE,
                   arguments: InvProductBuilder.fromProduct(
@@ -94,7 +94,7 @@ class _ExpiryPageState extends State<ExpiryPage> {
                       onPressed: () async {
                         await Navigator.pushNamed(context, ProductEditPage.ROUTE,
                           arguments: InvProductBuilder.fromProduct(
-                            await invState.fetchProduct(itemBuilder.code),
+                            invState.getProduct(itemBuilder.code),
                             itemBuilder.heroCode
                           )
                         );
