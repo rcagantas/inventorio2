@@ -67,15 +67,15 @@ class MainPage extends StatelessWidget {
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
           floatingActionButton: FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.pushNamed(context, ScanPage.ROUTE,
-                    arguments: invState.selectedInvMeta()
-                );
-              },
-              label: Text('Scan Barcode',
-                style: Theme.of(context).accentTextTheme.subtitle1
-                    .copyWith(fontWeight: FontWeight.bold),
-              )
+            onPressed: () {
+              Navigator.pushNamed(context, ScanPage.ROUTE,
+                arguments: invState.selectedInvMeta()
+              );
+            },
+            label: Text('Scan Barcode',
+              style: Theme.of(context).accentTextTheme.subtitle1
+                  .copyWith(fontWeight: FontWeight.bold),
+            )
           ),
           body: invState.selectedInvList().isEmpty ? TitleCard() : ListView.builder(
             itemBuilder: (context, index) {
