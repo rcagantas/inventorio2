@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_native_image/flutter_native_image.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inventorio2/models/inv_auth.dart';
+import 'package:inventorio2/models/inv_expiry.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_meta.dart';
 import 'package:inventorio2/models/inv_product.dart';
@@ -64,8 +65,22 @@ class InvState with ChangeNotifier {
     );
 
     _sortingFunctionMap = {
-      InvSort.EXPIRY: expirySort,
-      InvSort.DATE_ADDED: dateAddedSort,
+      InvSort.EXPIRY: (InvItem item1, InvItem item2) {
+        _itemValidationCheck(item1);
+        _itemValidationCheck(item2);
+
+        int comparison = item1.expiry.compareTo(item2.expiry);
+        return comparison != 0 ? comparison : productSort(item1, item2);
+      },
+
+      InvSort.DATE_ADDED: (InvItem item1, InvItem item2) {
+        _itemValidationCheck(item1);
+        _itemValidationCheck(item2);
+
+        int comparison = item2.dateAdded.compareTo(item1.dateAdded);
+        return comparison != 0 ? comparison : productSort(item1, item2);
+      },
+
       InvSort.PRODUCT: productSort
     };
 
@@ -123,7 +138,7 @@ class InvState with ChangeNotifier {
     }
 
     if (_invItemMap.containsKey(invUser.currentInventoryId)) {
-      _invItemMap[invUser.currentInventoryId].sort(_sortingFunctionMap[sortingKey]);
+      _invItemMap[invUser.currentInventoryId].sort(getSortingFunction(sortingKey));
     }
 
     notifyListeners();
@@ -154,30 +169,41 @@ class InvState with ChangeNotifier {
   }
   
   void _runSchedulerWhenListComplete() async {
-    var population = invUser.knownInventories.countWhere((element) => _invItemMap.containsKey(element));
+    var population = invUser.knownInventories
+        .countWhere((element) => _invItemMap.containsKey(element));
+
     if (population != invUser.knownInventories.length) {
       return;
     }
 
-    var listToSchedule = _invItemMap.values.expand((e) => e).toList()..sort(expirySort);
-    listToSchedule = listToSchedule.sublist(0, 64);
+    var listToSchedule = _invItemMap.values.expand((e) => e)
+        .where((element) => element.expiryDate.compareTo(DateTime.now()) > 0)
+        .toList();
 
+    var expiryList = <InvExpiry>[];
     for (InvItem item in listToSchedule) {
       var product = await fetchProduct(item.code);
       if (product.unset) {
         logger.i('Product information is not ready. Delaying scheduling.');
         return;
       }
+
+      expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.redIndex));
+      expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.yellowIndex));
     }
 
-    logger.i('Collecting items to schedule...');
+    expiryList.sort();
+
+    var expirySubList = expiryList.sublist(0, 64);
+    logger.i('Collecting ${expirySubList.length} items to schedule...');
+    expirySubList.forEach(print);
   }
 
   void _onInvList(String invMetaId, List<InvItem> list) async {
     _invItemMap[invMetaId] = list;
 
     if (list.isNotNullOrEmpty()) {
-      _invItemMap[invMetaId].sort(_sortingFunctionMap[sortingKey]);
+      _invItemMap[invMetaId].sort(getSortingFunction(sortingKey));
 
       for (var invItem in _invItemMap[invMetaId]) {
         _subscribeToProduct(invMetaId, invItem.code);
@@ -185,6 +211,8 @@ class InvState with ChangeNotifier {
     }
     
     notifyListeners();
+
+    _runSchedulerWhenListComplete();
   }
 
   void _subscribeToProduct(String invMetaId, String code) {
@@ -202,14 +230,18 @@ class InvState with ChangeNotifier {
   Future<InvProduct> fetchProduct(String code) async {
 
     if (getProduct(code).unset) {
+      _subscribeToProduct(invUser.currentInventoryId, code);
       String invMetaId = invUser.currentInventoryId;
 
       var product = await _invStoreService.fetchProduct(code);
       var localProduct = await _invStoreService.fetchLocalProduct(invMetaId, code);
+
+      if (product.unset && localProduct.unset) {
+        logger.i('Unknown product: $code');
+      }
+
       _onInvProductUpdate(product);
       _onInvLocalProductUpdate(localProduct);
-
-      return getProduct(code);
     }
 
     return getProduct(code);
@@ -221,6 +253,7 @@ class InvState with ChangeNotifier {
     }
 
     String code = invProduct.code;
+
     if (!_invProductMap.containsKey(code) || _invProductMap[code] != invProduct) {
       _invProductMap[code] = invProduct;
       logger.i('Product ${invProduct.toJson()}');
@@ -256,8 +289,8 @@ class InvState with ChangeNotifier {
     InvProduct master = _invProductMap.containsKey(code) ? _invProductMap[code] : defaultProduct;
     InvProduct local = _invLocalProductMap.containsKey(code) ? _invLocalProductMap[code] : defaultProduct;
 
-    _subscribeToProduct(invUser.currentInventoryId, code);
-    return !local.unset ? local : master;}
+    return !local.unset ? local : master;
+  }
 
   void _itemValidationCheck(InvItem item) {
     String msg;
@@ -270,20 +303,8 @@ class InvState with ChangeNotifier {
     return getProduct(item1.code).compareTo(getProduct(item2.code));
   }
 
-  int expirySort(InvItem item1, InvItem item2) {
-    _itemValidationCheck(item1);
-    _itemValidationCheck(item2);
-
-    int comparison = item1.expiry.compareTo(item2.expiry);
-    return comparison != 0 ? comparison : productSort(item1, item2);
-  }
-
-  int dateAddedSort(InvItem item1, InvItem item2) {
-    _itemValidationCheck(item1);
-    _itemValidationCheck(item2);
-
-    int comparison = item2.dateAdded.compareTo(item1.dateAdded);
-    return comparison != 0 ? comparison : productSort(item1, item2);
+  int Function(InvItem item1, InvItem item2) getSortingFunction(InvSort sortingKey) {
+    return _sortingFunctionMap[sortingKey];
   }
 
   void toggleSort() {
@@ -291,7 +312,7 @@ class InvState with ChangeNotifier {
     sortingKey = InvSort.values[(index + 1) % InvSort.values.length];
 
     var invMetaId = selectedInvMeta().uuid;
-    _invItemMap[invMetaId].sort(_sortingFunctionMap[sortingKey]);
+    _invItemMap[invMetaId].sort(getSortingFunction(sortingKey));
     notifyListeners();
   }
 
