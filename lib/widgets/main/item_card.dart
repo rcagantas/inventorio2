@@ -35,7 +35,9 @@ class ItemCard extends StatelessWidget {
             child: SizedBox(
               height: 100.0,
               child: Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).disabledColor),
+                ),
               ),
             ),
           );

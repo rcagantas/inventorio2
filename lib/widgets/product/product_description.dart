@@ -35,7 +35,7 @@ class ProductDescription extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           Text('${product.variant ?? ''}',
-              overflow: TextOverflow.ellipsis
+            overflow: TextOverflow.ellipsis
           ),
         ],
       ),

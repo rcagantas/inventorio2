@@ -28,10 +28,23 @@ class MainPage extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: Text('${invState.selectedInvMeta().name}'),
-            leading: FlatButton(
-              child: Icon(Icons.menu),
+            leading: IconButton(
+              icon: Icon(Icons.menu),
               onPressed: () {
-                Navigator.pushNamed(context, SettingsPage.ROUTE);
+                Navigator.push(context, PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => SettingsPage(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    var begin = Offset(-1, 0.0);
+                    var end = Offset.zero;
+                    var tween = Tween(begin: begin, end: end);
+                    var offsetAnimation = animation.drive(tween);
+
+                    return SlideTransition(
+                      position: offsetAnimation,
+                      child: child,
+                    );
+                  },
+                ));
               },
             ),
             actions: <Widget>[
