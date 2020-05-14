@@ -1,7 +1,11 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:inventorio2/models/inv_expiry.dart';
+import 'package:inventorio2/utils/log/log_printer.dart';
+import 'package:logger/logger.dart';
 
 class InvSchedulerService {
+  final logger = Logger(printer: SimpleLogPrinter('InvSchedulerService'));
+
   final FlutterLocalNotificationsPlugin notificationsPlugin;
   AndroidNotificationDetails androidNotificationDetails;
   IOSNotificationDetails iosNotificationDetails;
@@ -12,22 +16,19 @@ class InvSchedulerService {
   });
 
   void initialize({
-    dynamic Function(int id, String title, String body, String payload) onDidReceiveLocalNotification,
-    dynamic Function(String payload) onSelectNotification,
+    void Function(int id, String title, String body, String payload) onDidReceiveLocalNotification,
+    void Function(String payload) onSelectNotification,
   }) {
-
-    onDidReceiveLocalNotification = onDidReceiveLocalNotification == null
-        ? (id, title, body, payload) {}
-        : onDidReceiveLocalNotification;
-
-    onSelectNotification = onSelectNotification == null
-        ? (payload) {}
-        : onSelectNotification;
 
     this.notificationsPlugin.initialize(
       InitializationSettings(
         AndroidInitializationSettings('ic_alert'),
-        IOSInitializationSettings(onDidReceiveLocalNotification: onDidReceiveLocalNotification)
+        IOSInitializationSettings(
+          requestSoundPermission: true,
+          requestBadgePermission: true,
+          requestAlertPermission: true,
+          onDidReceiveLocalNotification: onDidReceiveLocalNotification
+        )
       ), onSelectNotification: onSelectNotification
     );
 
@@ -42,22 +43,24 @@ class InvSchedulerService {
       androidNotificationDetails,
       iosNotificationDetails
     );
-
   }
 
-  Future<void> clearScheduleTasks() async {
+  Future<void> clearScheduledTasks() async {
     await notificationsPlugin.cancelAll();
   }
 
   Future<void> scheduleNotification(InvExpiry expiry) async {
+    Stopwatch stopwatch = Stopwatch()..start();
     await notificationsPlugin.schedule(
       expiry.scheduleId,
       expiry.title,
       expiry.body,
       expiry.alertDate,
-      notificationDetails
+      notificationDetails,
+      payload: expiry.inventoryId
     );
+
+    stopwatch.stop();
+    logger.i('$expiry [${stopwatch.elapsedMilliseconds} ms]');
   }
-
-
 }

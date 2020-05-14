@@ -24,7 +24,7 @@ enum InvSort {
 }
 
 class InvState with ChangeNotifier {
-  final logger = Logger(printer: SimpleLogPrinter('InventoryRepo'));
+  final logger = Logger(printer: SimpleLogPrinter('InvState'));
 
   InvUser invUser;
   Map<String, InvMeta> _invMetas = {};
@@ -59,8 +59,9 @@ class InvState with ChangeNotifier {
   {
     invUser = InvUser.unset(userId: null);
     _invSchedulerService.initialize(
-      onSelectNotification: (payload) {
-        print('selected $payload');
+      onSelectNotification: (metaId) async {
+        logger.i('Selecting notification with payload $metaId');
+        await selectInventory(metaId);
       },
     );
 
@@ -176,11 +177,9 @@ class InvState with ChangeNotifier {
       return;
     }
 
-    var listToSchedule = _invItemMap.values.expand((e) => e)
-        .where((element) => element.expiryDate.compareTo(DateTime.now()) > 0)
-        .toList();
-
+    var listToSchedule = _invItemMap.values.expand((e) => e).toList();
     var expiryList = <InvExpiry>[];
+
     for (InvItem item in listToSchedule) {
       var product = await fetchProduct(item.code);
       if (product.unset) {
@@ -188,15 +187,16 @@ class InvState with ChangeNotifier {
         return;
       }
 
-      expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.redIndex));
-      expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.yellowIndex));
+      expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.redOffset));
+      expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.yellowOffset));
     }
 
-    expiryList.sort();
+    var now = DateTime.now();
+    expiryList..removeWhere((element) => element.alertDate.compareTo(now) < 0)..sort();
+    expiryList = expiryList.sublist(0, expiryList.length > 64? 64 : expiryList.length);
 
-    var expirySubList = expiryList.sublist(0, 64);
-    logger.i('Collecting ${expirySubList.length} items to schedule...');
-    expirySubList.forEach(print);
+    await _invSchedulerService.clearScheduledTasks();
+    expiryList.forEach(_invSchedulerService.scheduleNotification);
   }
 
   void _onInvList(String invMetaId, List<InvItem> list) async {
@@ -316,14 +316,20 @@ class InvState with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> selectInventory(String metaId) async {
+    if (!invUser.unset && invUser.knownInventories.contains(metaId)) {
+      logger.i('Selecting inventory $metaId');
+      await _invStoreService.updateUser(InvUser(
+          userId: invUser.userId,
+          knownInventories: invUser.knownInventories,
+          currentInventoryId: metaId,
+          currentVersion: invUser.currentVersion
+      ));
+    }
+  }
+
   Future<void> selectInvMeta(InvMeta invMeta) async {
-    logger.i('Selecting inventory ${invMeta.uuid}');
-    await _invStoreService.updateUser(InvUser(
-      userId: invUser.userId,
-      knownInventories: invUser.knownInventories,
-      currentInventoryId: invMeta.uuid,
-      currentVersion: invUser.currentVersion
-    ));
+    await selectInventory(invMeta.uuid);
   }
 
   Future<void> removeItem(InvItem item) async {

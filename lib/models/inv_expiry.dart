@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:intl/intl.dart';
 import 'package:inventorio2/models/inv_item.dart';
@@ -15,14 +16,17 @@ class InvExpiry implements Comparable {
     this.daysOffset,
   });
 
-  int get scheduleId => '$item.uuid/$daysOffset'.hashCode % ((math.pow(2, 31)) - 1);
-  String get title => product.stringRepresentation;
+  int get scheduleId => hashValues(item.uuid, daysOffset) % ((math.pow(2, 31)) - 1);
+
+  String get inventoryId => item.inventoryId;
+  String get title => '${product.brand} ${product.name}';
   String get body => 'is about to expire within $daysOffset days on '
       + '${DateFormat.MMM().format(item.expiryDate)} ${item.expiryDate.day}';
+
   DateTime get alertDate => item.expiryDate.subtract(Duration(days: daysOffset));
 
   @override
-  String toString() => '[$alertDate] $title $body';
+  String toString() => '[$alertDate][$scheduleId] $title $body';
 
   @override
   int compareTo(other) {

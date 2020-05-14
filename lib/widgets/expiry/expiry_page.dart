@@ -70,7 +70,7 @@ class _ExpiryPageState extends State<ExpiryPage> {
                 locale: DATETIME_PICKER_LOCALE_DEFAULT,
 
                 onChange: (dateTime, selectedIndex) {
-                  itemBuilder.expiryDate = dateTime;
+                  itemBuilder.expiryDate = dateTime.add(Duration(minutes: 2));
                 },
 
                 pickerTheme: DateTimePickerTheme(
@@ -110,7 +110,10 @@ class _ExpiryPageState extends State<ExpiryPage> {
                                 borderRadius: borderRadius,
                               )
                             ),
-                            Flexible(child: ProductDescription(product: product, productMaxLines: 5,)),
+                            Flexible(child: ProductDescription(
+                              product: product,
+                              productMaxLines: 5,)
+                            ),
                           ],
                         ),
                       ),

@@ -12,18 +12,18 @@ class InvItem {
   final String inventoryId;
 
   @JsonKey(ignore: true) final bool unset;
-  @JsonKey(ignore: true) final int redIndex = 7;
-  @JsonKey(ignore: true) final int yellowIndex = 30;
+  @JsonKey(ignore: true) final int redOffset = 7;
+  @JsonKey(ignore: true) final int yellowOffset = 30;
 
   DateTime get expiryDate => expiry == null
       ? DateTime.now()
       : DateTime.parse(expiry);
 
-  DateTime get redAlarm => expiryDate.subtract(Duration(days: redIndex));
-  DateTime get yellowAlarm => expiryDate.subtract(Duration(days: yellowIndex));
+  DateTime get redAlarm => expiryDate.subtract(Duration(days: redOffset));
+  DateTime get yellowAlarm => expiryDate.subtract(Duration(days: yellowOffset));
 
-  bool get withinRed => redAlarm.difference(DateTime.now()).inDays < 0;
-  bool get withinYellow => yellowAlarm.difference(DateTime.now()).inDays < 0;
+  bool get withinRed => redAlarm.difference(DateTime.now()).inDays <= 0;
+  bool get withinYellow => yellowAlarm.difference(DateTime.now()).inDays <= 0;
 
   String get heroCode => uuid + '_' + code;
 

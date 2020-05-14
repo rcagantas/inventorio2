@@ -13,7 +13,7 @@ enum InvStatus {
 }
 
 class UserState with ChangeNotifier {
-  final logger = Logger(printer: SimpleLogPrinter('UserRepo'));
+  final logger = Logger(printer: SimpleLogPrinter('UserState'));
 
   InvAuthService _invAuthService;
   InvStatus _status = InvStatus.Uninitialized;

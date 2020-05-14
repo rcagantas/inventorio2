@@ -55,7 +55,7 @@ class _CustomImageFormFieldState extends State<CustomImageFormField> {
                 errorWidget: (context, url, error) => placeHolder,
               ) : Container()
             ),
-            Positioned(top: 8.0, left: 8.0, child: Icon(Icons.camera_alt)),
+            Positioned(bottom: 8.0, left: 8.0, child: Icon(Icons.camera_alt)),
             Positioned.fill(
               child: imageFile == null? Container() : Image.asset(imageFile.path, fit: BoxFit.cover,)
             ),

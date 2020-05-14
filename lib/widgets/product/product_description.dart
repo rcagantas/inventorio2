@@ -16,10 +16,16 @@ class ProductDescription extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.all(8.0),
-      child: product.unset ? Center(
-        child: Text('Add New Product Information',
-          style: Theme.of(context).textTheme.headline6,
-        ),
+      child: product.unset ? Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text('Add New Product Information',
+            style: Theme.of(context).textTheme.headline6,
+          ),
+          SizedBox(height: 8.0,),
+          Text('${product.code}', style: Theme.of(context).textTheme.caption,),
+        ],
       ) : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceAround,

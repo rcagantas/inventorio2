@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:inventorio2/models/inv_auth.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_meta.dart';

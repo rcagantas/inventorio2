@@ -20,9 +20,14 @@ class _ProductEditPageState extends State<ProductEditPage> {
   InvProductBuilder productBuilder;
   bool fabValid;
 
-  final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  static const String TOO_LONG = 'Text is too long';
-  static const int MAX_LEN = 60;
+  final _fbKey = GlobalKey<FormBuilderState>();
+
+  final _brandFocus = FocusNode();
+  final _nameFocus = FocusNode();
+  final _variantFocus = FocusNode();
+
+  static const TOO_LONG = 'Text is too long';
+  static const MAX_LEN = 60;
 
   @override
   void initState() {
@@ -97,7 +102,19 @@ class _ProductEditPageState extends State<ProductEditPage> {
                         textAlign: TextAlign.center,
                       ),
                       FormBuilderTextField(
+                        attribute: 'brand',
+                        focusNode: _brandFocus,
+                        decoration: InputDecoration(labelText: 'Brand name'),
+                        textCapitalization: TextCapitalization.words,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_nameFocus),
+                        validators: [
+                          FormBuilderValidators.maxLength(MAX_LEN, errorText: TOO_LONG),
+                        ],
+                      ),
+                      FormBuilderTextField(
                         attribute: 'name',
+                        focusNode: _nameFocus,
                         decoration: InputDecoration(labelText: 'Product Name'),
                         onChanged: (value) {
                           setState(() {
@@ -106,24 +123,20 @@ class _ProductEditPageState extends State<ProductEditPage> {
                         },
                         textCapitalization: TextCapitalization.words,
                         autovalidate: true,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_variantFocus),
                         validators: [
                           FormBuilderValidators.required(errorText: 'Please set a product name'),
                           FormBuilderValidators.maxLength(MAX_LEN, errorText: TOO_LONG),
                         ],
                       ),
                       FormBuilderTextField(
-                        attribute: 'brand',
-                        decoration: InputDecoration(labelText: 'Brand name'),
-                        textCapitalization: TextCapitalization.words,
-                        validators: [
-                          FormBuilderValidators.maxLength(MAX_LEN, errorText: TOO_LONG),
-                        ],
-                      ),
-                      FormBuilderTextField(
                         attribute: 'variant',
+                        focusNode: _variantFocus,
                         decoration: InputDecoration(labelText: 'Variant/Flavor/Volume'),
                         textCapitalization: TextCapitalization.words,
                         autovalidate: true,
+                        textInputAction: TextInputAction.next,
                         validators: [
                           FormBuilderValidators.maxLength(MAX_LEN, errorText: TOO_LONG),
                         ],

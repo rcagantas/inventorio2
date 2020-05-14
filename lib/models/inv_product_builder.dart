@@ -12,17 +12,26 @@ class InvProductBuilder {
   File imageFile;
   bool unset;
 
-  static fromProduct(InvProduct product, String heroCode) {
-    InvProductBuilder invProductBuilder = InvProductBuilder();
-    invProductBuilder
-        ..code = product.code
-        ..name = product.name
-        ..brand = product.brand
-        ..variant = product.variant
-        ..imageUrl = product.imageUrl
-        ..unset = product.unset
-        ..heroCode = heroCode;
-    return invProductBuilder;
+  InvProductBuilder({
+    this.code,
+    this.name,
+    this.brand,
+    this.variant,
+    this.imageUrl,
+    this.imageFile,
+    this.unset,
+    this.heroCode
+  });
+
+  InvProductBuilder.fromProduct(InvProduct product, String heroCode) {
+    this
+      ..code = product.code
+      ..name = product.name
+      ..brand = product.brand
+      ..variant = product.variant
+      ..imageUrl = product.imageUrl
+      ..unset = product.unset
+      ..heroCode = heroCode;
   }
 
   InvProduct build() {
