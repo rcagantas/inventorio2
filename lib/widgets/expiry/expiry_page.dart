@@ -61,30 +61,11 @@ class _ExpiryPageState extends State<ExpiryPage> {
             builder: (context, constraints) {
 
               var media = MediaQuery.of(context);
-              var datePicker = DatePickerWidget(
-                minDateTime: itemBuilder.expiryDate.subtract(Duration(days: 365)),
-                maxDateTime: itemBuilder.expiryDate.add(Duration(days: 365 * 10)),
-                onMonthChangeStartWithFirstDate: true,
-                initialDateTime: itemBuilder.expiryDate,
-                dateFormat: 'yyyy MMMM d',
-                locale: DATETIME_PICKER_LOCALE_DEFAULT,
-
-                onChange: (dateTime, selectedIndex) {
-                  itemBuilder.expiryDate = dateTime.add(Duration(minutes: 2));
-                },
-
-                pickerTheme: DateTimePickerTheme(
-                  showTitle: false,
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  itemTextStyle: Theme.of(context).textTheme.headline5,
-                  itemHeight: 50.0 * media.textScaleFactor,
-                ),
-              );
-
               var borderRadius = const BorderRadius.all(Radius.circular(10.0));
               var product = invState.getProduct(itemBuilder.code);
 
-              return Wrap(
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Card(
                     clipBehavior: Clip.hardEdge,
@@ -108,20 +89,47 @@ class _ExpiryPageState extends State<ExpiryPage> {
                                 imageUrl: product.imageUrl,
                                 heroCode: itemBuilder.heroCode,
                                 borderRadius: borderRadius,
-                              )
+                              ),
                             ),
-                            Flexible(child: ProductDescription(
-                              product: product,
-                              productMaxLines: 5,)
+                            Flexible(
+                              child: ProductDescription(
+                                product: product,
+                                productMaxLines: 5,
+                                addText: 'Add Product Information',
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text('${product.code}',
+                      style: Theme.of(context).textTheme.caption
+                    ),
+                  ),
                   SizedBox(
                     height: media.size.height / 3,
-                    child: datePicker,
+                    child: DatePickerWidget(
+                      minDateTime: itemBuilder.expiryDate.subtract(Duration(days: 365)),
+                      maxDateTime: itemBuilder.expiryDate.add(Duration(days: 365 * 10)),
+                      onMonthChangeStartWithFirstDate: true,
+                      initialDateTime: itemBuilder.expiryDate,
+                      dateFormat: 'yyyy MMMM d',
+                      locale: DATETIME_PICKER_LOCALE_DEFAULT,
+
+                      onChange: (dateTime, selectedIndex) {
+                        itemBuilder.expiryDate = dateTime.add(Duration(minutes: 2));
+                      },
+
+                      pickerTheme: DateTimePickerTheme(
+                        showTitle: false,
+                        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                        itemTextStyle: Theme.of(context).textTheme.headline5,
+                        itemHeight: 50.0 * media.textScaleFactor,
+                      ),
+                    ),
                   )
                 ],
               );

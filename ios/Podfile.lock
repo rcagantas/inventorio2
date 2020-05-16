@@ -287,8 +287,6 @@ PODS:
     - FirebaseCore (~> 6.6)
     - GTMSessionFetcher/Core (~> 1.1)
   - Flutter (1.0.0)
-  - flutter_isolate (0.0.1):
-    - Flutter
   - flutter_keyboard_visibility (0.7.0):
     - Flutter
   - flutter_local_notifications (0.0.1):
@@ -395,6 +393,10 @@ PODS:
     - Flutter
   - path_provider_macos (0.0.1):
     - Flutter
+  - phone_number (0.6.2):
+    - Flutter
+    - PhoneNumberKit/PhoneNumberKitCore (~> 3.2.0)
+  - PhoneNumberKit/PhoneNumberKitCore (3.2.0)
   - PromisesObjC (1.2.8)
   - Protobuf (3.11.4)
   - qr_mobile_vision (0.0.1):
@@ -421,7 +423,6 @@ DEPENDENCIES:
   - firebase_core_web (from `.symlinks/plugins/firebase_core_web/ios`)
   - firebase_storage (from `.symlinks/plugins/firebase_storage/ios`)
   - Flutter (from `Flutter`)
-  - flutter_isolate (from `.symlinks/plugins/flutter_isolate/ios`)
   - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_native_image (from `.symlinks/plugins/flutter_native_image/ios`)
@@ -433,6 +434,7 @@ DEPENDENCIES:
   - package_info (from `.symlinks/plugins/package_info/ios`)
   - path_provider (from `.symlinks/plugins/path_provider/ios`)
   - path_provider_macos (from `.symlinks/plugins/path_provider_macos/ios`)
+  - phone_number (from `.symlinks/plugins/phone_number/ios`)
   - qr_mobile_vision (from `.symlinks/plugins/qr_mobile_vision/ios`)
   - sqflite (from `.symlinks/plugins/sqflite/ios`)
   - url_launcher (from `.symlinks/plugins/url_launcher/ios`)
@@ -472,6 +474,7 @@ SPEC REPOS:
     - GTMSessionFetcher
     - leveldb-library
     - nanopb
+    - PhoneNumberKit
     - PromisesObjC
     - Protobuf
 
@@ -494,8 +497,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_storage/ios"
   Flutter:
     :path: Flutter
-  flutter_isolate:
-    :path: ".symlinks/plugins/flutter_isolate/ios"
   flutter_keyboard_visibility:
     :path: ".symlinks/plugins/flutter_keyboard_visibility/ios"
   flutter_local_notifications:
@@ -518,6 +519,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/path_provider/ios"
   path_provider_macos:
     :path: ".symlinks/plugins/path_provider_macos/ios"
+  phone_number:
+    :path: ".symlinks/plugins/phone_number/ios"
   qr_mobile_vision:
     :path: ".symlinks/plugins/qr_mobile_vision/ios"
   sqflite:
@@ -556,7 +559,6 @@ SPEC CHECKSUMS:
   FirebaseMLVisionBarcodeModel: 96ef18a75ecdf867244ef2e75c8c1f01517667dc
   FirebaseStorage: f4f39ae834a7145963b913f54e2f24a9db1d8fac
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
-  flutter_isolate: 0edf5081826d071adf21759d1eb10ff5c24503b5
   flutter_keyboard_visibility: 6195387fb6d8f46e5cd6dda4a4154e41f800f545
   flutter_local_notifications: 9e4738ce2471c5af910d961a6b7eadcf57c50186
   flutter_native_image: 9c0b7451838484458e5b0fae007b86a4c2d4bdfe
@@ -582,6 +584,8 @@ SPEC CHECKSUMS:
   package_info: 48b108e75b8802c2d5e126f208ef540561c98aef
   path_provider: fb74bd0465e96b594bb3b5088ee4a4e7bb1f2a9d
   path_provider_macos: f760a3c5b04357c380e2fddb6f9db6f3015897e0
+  phone_number: b545f5b7d9711bec0f020c7df43ae5a82119f4ad
+  PhoneNumberKit: df411d46177d1492da84e10b6c093846dd861452
   PromisesObjC: c119f3cd559f50b7ae681fa59dc1acd19173b7e6
   Protobuf: 176220c526ad8bd09ab1fb40a978eac3fef665f7
   qr_mobile_vision: b20aca10aa3f5d1651cb71efc09bfaea098df043

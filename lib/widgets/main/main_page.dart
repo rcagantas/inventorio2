@@ -64,12 +64,16 @@ class MainPage extends StatelessWidget {
                   .copyWith(fontWeight: FontWeight.bold),
             )
           ),
-          body: invState.selectedInvList().isEmpty ? TitleCard() : ListView.builder(
-            itemBuilder: (context, index) {
-              InvItem invItem = invState.selectedInvList()[index];
-              return ItemCard(invItem);
-            },
-            itemCount: invState.selectedInvList().length
+          body: Visibility(
+            visible: invState.selectedInvList().isNotEmpty,
+            child: ListView.builder(
+              itemBuilder: (context, index) {
+                InvItem invItem = invState.selectedInvList()[index];
+                return ItemCard(invItem);
+              },
+              itemCount: invState.selectedInvList().length
+            ),
+            replacement: TitleCard(),
           ),
         );
       },
