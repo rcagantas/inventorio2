@@ -84,7 +84,7 @@ class _ExpiryPageState extends State<ExpiryPage> {
               var borderRadius = const BorderRadius.all(Radius.circular(10.0));
               var product = invState.getProduct(itemBuilder.code);
 
-              return ListView(
+              return Wrap(
                 children: <Widget>[
                   Card(
                     clipBehavior: Clip.hardEdge,

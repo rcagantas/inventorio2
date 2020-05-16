@@ -6,12 +6,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:inventorio2/providers/inv_state.dart';
-import 'package:inventorio2/services/inv_auth_service.dart';
 import 'package:inventorio2/providers/user_state.dart';
+import 'package:inventorio2/services/inv_auth_service.dart';
 import 'package:inventorio2/services/inv_scheduler_service.dart';
 import 'package:inventorio2/services/inv_store_service.dart';
 import 'package:inventorio2/widgets/auth/auth_page.dart';
 import 'package:inventorio2/widgets/expiry/expiry_page.dart';
+import 'package:inventorio2/widgets/inventory_edit/inventory_edit_page.dart';
 import 'package:inventorio2/widgets/product_edit/product_edit_page.dart';
 import 'package:inventorio2/widgets/scan/scan_page.dart';
 import 'package:inventorio2/widgets/settings/settings_page.dart';
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
           ExpiryPage.ROUTE: (context) => ExpiryPage(),
           ScanPage.ROUTE: (context) => ScanPage(),
           ProductEditPage.ROUTE: (context) => ProductEditPage(),
+          InventoryEditPage.ROUTE: (context) => InventoryEditPage(),
         },
         title: 'Inventorio 2',
         theme: ThemeData(

@@ -1,11 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:inventorio2/providers/inv_state.dart';
 import 'package:inventorio2/providers/user_state.dart';
-import 'package:inventorio2/widgets/auth/splash_page.dart';
+import 'package:inventorio2/widgets/inventory_edit/inventory_edit_page.dart';
 import 'package:provider/provider.dart';
-import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 
 class SettingsPage extends StatelessWidget {
   static const ROUTE = '/settings';
@@ -38,15 +39,41 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
           ),
-          Row(
+          Wrap(
             children: <Widget>[
-              FlatButton.icon(
-                icon: Icon(Icons.scatter_plot),
-                label: Text('Test'),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SplashPage()));
+              FlatButton(
+                onPressed: () {},
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    Icon(Icons.add),
+                    Text('New')
+                  ],
+                ),
+              ),
+              FlatButton(
+                onPressed: () {},
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    FaIcon(FontAwesomeIcons.qrcode),
+                    Text('Scan')
+                  ],
+                ),
+              ),
+              FlatButton(
+                onPressed: () async {
+                  await Navigator.pushNamed(context, InventoryEditPage.ROUTE,);
                 },
-              )
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    Icon(Icons.edit),
+                    Text('Edit')
+                  ],
+                ),
+              ),
+
             ],
           ),
           Expanded(
@@ -54,13 +81,14 @@ class SettingsPage extends StatelessWidget {
               builder: (context, invState, child) => ListView.builder(
                 itemCount: invState.invMetas.length,
                 itemBuilder: (context, index) => ListTile(
-                    title: Text('${invState.invMetas[index].name}'),
-                    subtitle: Text('${invState.invMetas[index].uuid}'),
-                    selected: invState.invMetas[index] == invState.selectedInvMeta(),
-                    onTap: () {
-                      Navigator.pop(context);
-                      invState.selectInvMeta(invState.invMetas[index]);
-                    },
+                  title: Text('${invState.invMetas[index].name}'),
+                  subtitle: Text('${invState.invMetas[index].uuid}'),
+                  selected: invState.invMetas[index] == invState.selectedInvMeta(),
+                  onTap: () {
+                    Navigator.pop(context);
+                    invState.selectInvMeta(invState.invMetas[index]);
+                  },
+                  onLongPress: () {},
                 ),
               )
             ),

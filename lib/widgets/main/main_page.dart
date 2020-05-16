@@ -29,22 +29,9 @@ class MainPage extends StatelessWidget {
           appBar: AppBar(
             title: Text('${invState.selectedInvMeta().name}'),
             leading: IconButton(
-              icon: Icon(Icons.menu),
-              onPressed: () {
-                Navigator.push(context, PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => SettingsPage(),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                    var begin = Offset(-1, 0.0);
-                    var end = Offset.zero;
-                    var tween = Tween(begin: begin, end: end);
-                    var offsetAnimation = animation.drive(tween);
-
-                    return SlideTransition(
-                      position: offsetAnimation,
-                      child: child,
-                    );
-                  },
-                ));
+              icon: Icon(Icons.account_circle),
+              onPressed: () async {
+                await Navigator.pushNamed(context, SettingsPage.ROUTE);
               },
             ),
             actions: <Widget>[
