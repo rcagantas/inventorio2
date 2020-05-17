@@ -1,7 +1,9 @@
+import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/providers/inv_state.dart';
+import 'package:inventorio2/widgets/expiry/expiry_page.dart';
 import 'package:inventorio2/widgets/main/item_card.dart';
 import 'package:inventorio2/widgets/main/item_search_delegate.dart';
 import 'package:inventorio2/widgets/main/title_card.dart';
@@ -10,6 +12,8 @@ import 'package:inventorio2/widgets/settings/settings_page.dart';
 import 'package:provider/provider.dart';
 
 class MainPage extends StatelessWidget {
+
+  static const ROUTE = '/main';
 
   final Map<InvSort, Icon> iconMap = {
     InvSort.EXPIRY: Icon(Icons.sort),
@@ -54,10 +58,23 @@ class MainPage extends StatelessWidget {
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.pushNamed(context, ScanPage.ROUTE,
-                arguments: invState.selectedInvMeta()
-              );
+            onPressed: () async {
+              String code = await Navigator.push(context, MaterialPageRoute<String>(
+                builder: (context) => ScanPage(),
+              ));
+
+              if (code.isNotNullOrEmpty()) {
+                var builder = InvItemBuilder(
+                code: code,
+                inventoryId: invState.selectedInvMeta().uuid
+                );
+
+                invState.fetchProduct(code);
+
+                await Navigator.pushNamed(context, ExpiryPage.ROUTE,
+                arguments: builder.build()
+                );
+              }
             },
             label: Text('Scan Barcode',
               style: Theme.of(context).accentTextTheme.subtitle1

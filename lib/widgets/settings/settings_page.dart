@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:inventorio2/providers/inv_state.dart';
 import 'package:inventorio2/providers/user_state.dart';
 import 'package:inventorio2/widgets/inventory_edit/inventory_edit_page.dart';
+import 'package:inventorio2/widgets/scan/scan_page.dart';
 import 'package:provider/provider.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -13,12 +14,12 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Settings'),),
-      body: Column(
-        children: <Widget>[
-          Consumer<UserState>(
-            builder: (context, userState, child) => ListTile(
+    return Consumer2<UserState, InvState>(
+      builder: (context, userState, invState, child) => Scaffold(
+        appBar: AppBar(title: Text('Settings'),),
+        body: Column(
+          children: <Widget>[
+            ListTile(
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).bottomAppBarColor,
                 backgroundImage: userState.invAuth.photoUrl.isNullOrEmpty()
@@ -38,62 +39,74 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
             ),
-          ),
-          Wrap(
-            children: <Widget>[
-              FlatButton(
-                onPressed: () {},
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Icon(Icons.add),
-                    Text('New')
-                  ],
+            Wrap(
+              children: <Widget>[
+                FlatButton(
+                  padding: EdgeInsets.all(8.0),
+                  onPressed: () {},
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Icon(Icons.add),
+                      Text('New'),
+                      Text('Inventory'),
+                    ],
+                  ),
                 ),
-              ),
-              FlatButton(
-                onPressed: () {},
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    FaIcon(FontAwesomeIcons.qrcode),
-                    Text('Scan')
-                  ],
-                ),
-              ),
-              FlatButton(
-                onPressed: () async {
-                  await Navigator.pushNamed(context, InventoryEditPage.ROUTE,);
-                },
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Icon(Icons.edit),
-                    Text('Edit')
-                  ],
-                ),
-              ),
-
-            ],
-          ),
-          Expanded(
-            child: Consumer<InvState>(
-              builder: (context, invState, child) => ListView.builder(
-                itemCount: invState.invMetas.length,
-                itemBuilder: (context, index) => ListTile(
-                  title: Text('${invState.invMetas[index].name}'),
-                  subtitle: Text('${invState.invMetas[index].uuid}'),
-                  selected: invState.invMetas[index] == invState.selectedInvMeta(),
-                  onTap: () {
-                    Navigator.pop(context);
-                    invState.selectInvMeta(invState.invMetas[index]);
+                FlatButton(
+                  padding: EdgeInsets.all(8.0),
+                  onPressed: () async {
+                    var code = await Navigator.pushNamed(context, ScanPage.ROUTE);
+                    await invState.addInventory(code);
                   },
-                  onLongPress: () {},
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      FaIcon(FontAwesomeIcons.qrcode),
+                      Text('Scan'),
+                      Text('Inventory'),
+                    ],
+                  ),
                 ),
-              )
+                FlatButton(
+                  padding: EdgeInsets.all(8.0),
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, InventoryEditPage.ROUTE,
+                      arguments: invState.selectedInvMeta()
+                    );
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Icon(Icons.edit),
+                      Text('Edit/Share'),
+                      Text('Inventory'),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          )
-        ],
+            Expanded(
+              child: ListView.builder(
+                itemCount: invState.invMetas.length,
+                itemBuilder: (context, index) {
+                  var count = invState.inventoryItemCount(invState.invMetas[index].uuid);
+                  var text = count == 1? 'item': 'items';
+                  return ListTile(
+                    title: Text('${invState.invMetas[index].name}'),
+                    subtitle: Text('$count $text'),
+                    selected: invState.invMetas[index] == invState.selectedInvMeta(),
+                    onTap: () {
+                      Navigator.pop(context);
+                      invState.selectInvMeta(invState.invMetas[index]);
+                    },
+                    onLongPress: () {},
+                  );
+                },
+              )
+            )
+          ],
+        ),
       ),
     );
   }

@@ -10,7 +10,6 @@ import 'package:inventorio2/models/inv_expiry.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_meta.dart';
 import 'package:inventorio2/models/inv_product.dart';
-import 'package:inventorio2/models/inv_product_builder.dart';
 import 'package:inventorio2/models/inv_user.dart';
 import 'package:inventorio2/services/inv_scheduler_service.dart';
 import 'package:inventorio2/services/inv_store_service.dart';
@@ -319,13 +318,14 @@ class InvState with ChangeNotifier {
   Future<void> selectInventory(String metaId) async {
     if (!invUser.unset && invUser.knownInventories.contains(metaId)) {
       logger.i('Selecting inventory $metaId');
-      await _invStoreService.updateUser(InvUser(
-          userId: invUser.userId,
-          knownInventories: invUser.knownInventories,
-          currentInventoryId: metaId,
-          currentVersion: invUser.currentVersion
-      ));
+      var userBuilder = InvUserBuilder.fromUser(invUser)
+        ..currentInventoryId = metaId;
+      await _invStoreService.updateUser(userBuilder);
     }
+  }
+
+  int inventoryItemCount(String metaId) {
+    return _invItemMap[metaId]?.length ?? 0;
   }
 
   Future<void> selectInvMeta(InvMeta invMeta) async {
@@ -337,15 +337,15 @@ class InvState with ChangeNotifier {
     await _invStoreService.deleteItem(item);
   }
 
-  Future<void> updateItem(InvItem item) async {
-    var product = await fetchProduct(item.code);
+  Future<void> updateItem(InvItemBuilder itemBuilder) async {
+    var product = await fetchProduct(itemBuilder.code);
     if (product.unset) {
-      logger.i('Product is unset. Aborting add of item ${item.toJson()}');
+      logger.i('Product is unset. Aborting add of item ${itemBuilder.toJson()}');
       return;
     }
 
-    logger.i('Adding item [${product.name}] ${item.toJson()}');
-    await _invStoreService.updateItem(item);
+    logger.i('Adding item [${product.name}] ${itemBuilder.toJson()}');
+    await _invStoreService.updateItem(itemBuilder);
   }
 
   Future<void> updateProduct(InvProductBuilder productBuilder) async {
@@ -364,7 +364,7 @@ class InvState with ChangeNotifier {
     // we need to update the cache immediately so that we can add the item.
     _onInvLocalProductUpdate(productBuilder.build());
 
-    await _invStoreService.updateProduct(productBuilder.build(), invUser.currentInventoryId);
+    await _invStoreService.updateProduct(productBuilder, invUser.currentInventoryId);
     await _updateProductWithImage(productBuilder);
   }
 
@@ -390,9 +390,43 @@ class InvState with ChangeNotifier {
     productBuilder.imageUrl = imageUrl;
 
     logger.i('Re-uploading with ${productBuilder.imageUrl}');
-    await _invStoreService.updateProduct(productBuilder.build(), invUser.currentInventoryId);
+    await _invStoreService.updateProduct(productBuilder, invUser.currentInventoryId);
 
     await productBuilder.imageFile.delete();
     await resized.delete();
+  }
+
+  Future<void> updateInvMeta(InvMetaBuilder invMetaBuilder) async {
+    if (invMetaBuilder.createdBy == null) {
+      invMetaBuilder.createdBy = invUser.userId;
+    }
+
+    await _invStoreService.updateMeta(invMetaBuilder);
+
+    if (!invUser.knownInventories.contains(invMetaBuilder.uuid)) {
+      logger.i('Adding inventory ${invMetaBuilder.uuid}');
+      var userBuilder = InvUserBuilder.fromUser(invUser)
+        ..knownInventories.add(invMetaBuilder.uuid);
+      await _invStoreService.updateUser(userBuilder);
+    }
+  }
+
+  Future<void> unsubscribeFromInventory(String uuid) async {
+    if (!invUser.knownInventories.contains(uuid)
+      && invUser.knownInventories.length > 1
+    ) {
+      logger.i('Removing inventory $uuid');
+      var userBuilder = InvUserBuilder.fromUser(invUser)
+        ..knownInventories.remove(uuid);
+      await _invStoreService.updateUser(userBuilder);
+    }
+  }
+
+  Future<void> addInventory(String uuid) async {
+    if (!invUser.knownInventories.contains(uuid)) {
+      var userBuilder = InvUserBuilder.fromUser(invUser)
+          ..knownInventories.add(uuid);
+      await _invStoreService.updateUser(userBuilder);
+    }
   }
 }

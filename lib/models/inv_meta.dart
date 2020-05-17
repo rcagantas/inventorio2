@@ -25,3 +25,30 @@ class InvMeta implements Comparable {
     return -1;
   }
 }
+
+
+class InvMetaBuilder {
+  String uuid;
+  String name;
+  String createdBy;
+
+  InvMetaBuilder({
+    this.uuid,
+    this.name,
+    this.createdBy,
+  });
+
+  InvMetaBuilder.fromInvMeta(InvMeta invMeta) {
+    this..uuid = invMeta.uuid
+      ..name = invMeta.name
+      ..createdBy = invMeta.createdBy;
+  }
+
+  InvMeta build() {
+    return InvMeta(
+        name: this.name,
+        uuid: this.uuid,
+        createdBy: this.createdBy
+    );
+  }
+}

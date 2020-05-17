@@ -106,37 +106,37 @@ class InvStoreService {
         });
   }
 
-  InvMeta createNewMeta(String createdByUid) {
-    InvMeta meta = InvMeta(
-        createdBy: createdByUid,
-        name: 'Inventory',
-        uuid: generateUuid()
+  InvMetaBuilder createNewMeta(String createdByUid) {
+    return InvMetaBuilder(
+      createdBy: createdByUid,
+      name: 'Inventory',
+      uuid: generateUuid()
     );
-
-    updateMeta(meta);
-    return meta;
   }
 
   InvUser createNewUser(String uid) {
-    InvMeta meta = createNewMeta(uid);
+    InvMetaBuilder metaBuilder = createNewMeta(uid);
+    updateMeta(metaBuilder);
 
-    InvUser user = InvUser(
-        currentInventoryId: meta.uuid,
-        knownInventories: [meta.uuid],
+    var userBuilder = InvUserBuilder(
+        currentInventoryId: metaBuilder.uuid,
+        knownInventories: [metaBuilder.uuid],
         userId: uid
     );
 
-    logger.i('Creating new user ${user.toJson()}');
-    updateUser(user);
-    return user;
+    logger.i('Creating new user ${userBuilder.toJson()}');
+    updateUser(userBuilder);
+    return userBuilder.build();
   }
 
-  Future<InvUser> updateUser(InvUser user) async {
+  Future<InvUser> updateUser(InvUserBuilder userBuilder) async {
+    InvUser user = userBuilder.build();
     await _users.document(user.userId).setData(user.toJson());
     return user;
   }
 
-  Future<InvMeta> updateMeta(InvMeta meta) async {
+  Future<InvMeta> updateMeta(InvMetaBuilder metaBuilder) async {
+    var meta = metaBuilder.build();
     await _inventory.document(meta.uuid).setData(meta.toJson());
     return meta;
   }
@@ -167,14 +167,16 @@ class InvStoreService {
         .delete();
   }
 
-  Future<void> updateItem(InvItem item) async {
+  Future<void> updateItem(InvItemBuilder itemBuilder) async {
+    var item = itemBuilder.build();
     await _inventory.document(item.inventoryId)
         .collection(ITEMS)
         .document(item.uuid)
         .setData(item.toJson());
   }
 
-  Future<void> updateProduct(InvProduct product, String inventoryId) async {
+  Future<void> updateProduct(InvProductBuilder productBuilder, String inventoryId) async {
+    var product = productBuilder.build();
     await _inventory.document(inventoryId)
         .collection(PRODUCTS)
         .document(product.code)

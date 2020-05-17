@@ -56,7 +56,7 @@ class ItemCard extends StatelessWidget {
                   icon: Icons.delete,
                   onTap: () async {
                     InvProduct product = invState.getProduct(item.code);
-                    await invState.removeItem(item);
+                    invState.removeItem(item);
 
                     Scaffold.of(context).showSnackBar(
                       SnackBar(
@@ -64,7 +64,7 @@ class ItemCard extends StatelessWidget {
                         action: SnackBarAction(
                           label: 'UNDO',
                           onPressed: () {
-                            invState.updateItem(item);
+                            invState.updateItem(InvItemBuilder.fromItem(item));
                           }
                         ),
                       )

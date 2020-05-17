@@ -68,7 +68,6 @@ class _CustomImageFormFieldState extends State<CustomImageFormField> {
                     if (imageFile != null) {
                       setState(() {
                         formState.setAttributeValue(widget.attribute, imageFile);
-                        print('${formState.value}');
                       });
                     }
                   },

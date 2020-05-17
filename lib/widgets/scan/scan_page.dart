@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:get_it/get_it.dart';
-import 'package:inventorio2/models/inv_item_builder.dart';
-import 'package:inventorio2/models/inv_meta.dart';
-import 'package:inventorio2/providers/inv_state.dart';
-import 'package:inventorio2/widgets/expiry/expiry_page.dart';
 import 'package:qr_mobile_vision/qr_camera.dart';
 
 class ScanPage extends StatefulWidget {
@@ -21,8 +16,6 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
-
-    InvMeta invMeta = ModalRoute.of(context).settings.arguments;
 
     return Scaffold(
       appBar: AppBar(
@@ -69,17 +62,7 @@ class _ScanPageState extends State<ScanPage> {
               qrCodeCallback: (code) {
                 if (_detectedCode == null) {
                   _detectedCode = code;
-
-                  var builder = InvItemBuilder()
-                    ..code = code
-                    ..inventoryId = invMeta.uuid;
-
-                  var invState = GetIt.instance<InvState>();
-                  invState.fetchProduct(code);
-
-                  Navigator.popAndPushNamed(context, ExpiryPage.ROUTE,
-                      arguments: builder.build()
-                  );
+                  Navigator.pop(context, code);
                 }
               },
             ),

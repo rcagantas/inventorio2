@@ -2,7 +2,7 @@ import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:inventorio2/models/inv_product_builder.dart';
+import 'package:inventorio2/models/inv_product.dart';
 import 'package:inventorio2/providers/inv_state.dart';
 import 'package:inventorio2/widgets/product_edit/custom_image_form_field.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +58,6 @@ class _ProductEditPageState extends State<ProductEditPage> {
 
           onPressed: () async {
             if (_fbKey.currentState.saveAndValidate()) {
-              print('${_fbKey.currentState.value}');
               productBuilder
                 ..name = _fbKey.currentState.value['name']
                 ..brand = _fbKey.currentState.value['brand']

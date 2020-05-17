@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 part 'inv_item.g.dart';
 
@@ -83,4 +84,85 @@ class InvItem {
   
   @override
   int get hashCode => hashValues(uuid, code, expiry, dateAdded, inventoryId);
+}
+
+class InvItemBuilder {
+
+  static final Uuid _uuid = Uuid();
+
+  static String generateUuid() => _uuid.v4();
+
+  String uuid;
+  String code;
+  String expiry;
+  String dateAdded;
+  String inventoryId;
+  String heroCode;
+
+  DateTime get expiryDate {
+    return expiry == null
+        ? DateTime.now().add(Duration(days: 30))
+        : DateTime.tryParse(expiry);
+  }
+
+  set expiryDate(DateTime expiryDateTime) {
+    DateTime now = DateTime.now();
+    expiryDateTime = expiryDateTime.add(
+        Duration(hours: now.hour, minutes: now.minute + 1, seconds: now.second)
+    );
+    expiry = expiryDateTime.toIso8601String();
+  }
+
+  InvItem build() {
+    validate();
+
+    return InvItem(
+        uuid: uuid,
+        code: code,
+        expiry: expiry,
+        dateAdded: dateAdded,
+        inventoryId: inventoryId
+    );
+  }
+
+  InvItemBuilder({
+    this.uuid,
+    this.code,
+    this.expiry,
+    this.dateAdded,
+    this.inventoryId,
+  });
+
+  InvItemBuilder.fromItem(InvItem item) {
+    this..uuid = item.uuid
+      ..code = item.code
+      ..expiry = item.expiry
+      ..dateAdded = item.dateAdded
+      ..inventoryId = item.inventoryId
+      ..heroCode = item.heroCode;
+  }
+
+  @override
+  String toString() {
+    return build().toJson().toString();
+  }
+
+  void validate() {
+    DateTime now = DateTime.now();
+    dateAdded = dateAdded == null
+        ? now.toIso8601String()
+        : dateAdded;
+
+    expiry = expiry == null
+        ? now.add(Duration(days: 30)).toIso8601String()
+        : expiry;
+
+    uuid = uuid == null
+        ? generateUuid()
+        : uuid;
+  }
+
+  Map<String, dynamic> toJson() {
+    return build().toJson();
+  }
 }

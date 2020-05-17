@@ -30,3 +30,44 @@ class InvUser {
   factory InvUser.fromJson(Map<String, dynamic> json) => _$InvUserFromJson(json);
   Map<String, dynamic> toJson() => _$InvUserToJson(this);
 }
+
+
+class InvUserBuilder {
+  List<String> knownInventories;
+  String userId;
+  String currentInventoryId;
+  String currentVersion;
+  bool unset;
+
+  InvUserBuilder({
+    this.knownInventories,
+    this.userId,
+    this.currentInventoryId,
+    this.currentVersion,
+  }) :
+        unset = false;
+
+  InvUserBuilder.unset() :
+        unset = true;
+
+  InvUserBuilder.fromUser(InvUser invUser) {
+    this..knownInventories = new List<String>.from(invUser.knownInventories)
+      ..userId = invUser.userId
+      ..currentInventoryId = invUser.currentInventoryId
+      ..currentVersion = invUser.currentVersion
+      ..unset = invUser.unset;
+  }
+
+  InvUser build() {
+    return InvUser(
+        knownInventories: knownInventories,
+        currentInventoryId: currentInventoryId,
+        userId: userId,
+        currentVersion: currentVersion
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return build().toJson();
+  }
+}

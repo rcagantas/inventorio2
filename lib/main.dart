@@ -13,6 +13,7 @@ import 'package:inventorio2/services/inv_store_service.dart';
 import 'package:inventorio2/widgets/auth/auth_page.dart';
 import 'package:inventorio2/widgets/expiry/expiry_page.dart';
 import 'package:inventorio2/widgets/inventory_edit/inventory_edit_page.dart';
+import 'package:inventorio2/widgets/main/main_page.dart';
 import 'package:inventorio2/widgets/product_edit/product_edit_page.dart';
 import 'package:inventorio2/widgets/scan/scan_page.dart';
 import 'package:inventorio2/widgets/settings/settings_page.dart';
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
           ScanPage.ROUTE: (context) => ScanPage(),
           ProductEditPage.ROUTE: (context) => ProductEditPage(),
           InventoryEditPage.ROUTE: (context) => InventoryEditPage(),
+          MainPage.ROUTE: (context) => MainPage(),
         },
         title: 'Inventorio 2',
         theme: ThemeData(
