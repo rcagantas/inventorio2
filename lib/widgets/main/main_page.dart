@@ -1,4 +1,3 @@
-import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:inventorio2/models/inv_item.dart';
@@ -59,14 +58,13 @@ class MainPage extends StatelessWidget {
           floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
-              String code = await Navigator.push(context, MaterialPageRoute<String>(
-                builder: (context) => ScanPage(),
-              ));
+              var popped = await Navigator.pushNamed(context, ScanPage.ROUTE);
+              String code = popped?.toString() ?? '';
 
-              if (code.isNotNullOrEmpty()) {
+              if (code.isNotEmpty) {
                 var builder = InvItemBuilder(
-                code: code,
-                inventoryId: invState.selectedInvMeta().uuid
+                  code: code.replaceAll('/', '#'),
+                  inventoryId: invState.selectedInvMeta().uuid
                 );
 
                 invState.fetchProduct(code);

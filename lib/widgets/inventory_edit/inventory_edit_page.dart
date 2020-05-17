@@ -26,8 +26,7 @@ class _InventoryEditPageState extends State<InventoryEditPage> {
 
   @override
   Widget build(BuildContext context) {
-    invMetaBuilder =
-        InvMetaBuilder.fromInvMeta(ModalRoute.of(context).settings.arguments);
+    invMetaBuilder = ModalRoute.of(context).settings.arguments;
 
     var media = MediaQuery.of(context);
     var smaller = media.size.width > media.size.height
@@ -56,12 +55,13 @@ class _InventoryEditPageState extends State<InventoryEditPage> {
               FormBuilder(
                 key: _fbKey,
                 initialValue: {
-                  'inventoryName': invMetaBuilder.name,
+                  'inventoryName': invMetaBuilder.name ?? 'Inventory',
                 },
                 child: FormBuilderTextField(
                   attribute: 'inventoryName',
                   decoration: InputDecoration(labelText: 'Inventory Name'),
                   textCapitalization: TextCapitalization.words,
+                  style: Theme.of(context).textTheme.headline6,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -98,7 +98,8 @@ class _InventoryEditPageState extends State<InventoryEditPage> {
                         );
 
                         if (result == OkCancelResult.ok) {
-                          await invState.unsubscribeFromInventory(invState.selectedInvMeta().uuid);
+                          invState.unsubscribeFromInventory(invState.selectedInvMeta().uuid);
+                          Navigator.pop(context);
                         }
                       },
                     ),

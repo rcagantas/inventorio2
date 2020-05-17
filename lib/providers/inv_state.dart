@@ -412,21 +412,37 @@ class InvState with ChangeNotifier {
   }
 
   Future<void> unsubscribeFromInventory(String uuid) async {
-    if (!invUser.knownInventories.contains(uuid)
-      && invUser.knownInventories.length > 1
+    if (invUser.knownInventories.contains(uuid)
+        && invUser.knownInventories.length > 1
     ) {
       logger.i('Removing inventory $uuid');
       var userBuilder = InvUserBuilder.fromUser(invUser)
         ..knownInventories.remove(uuid);
+
+      if (userBuilder.currentInventoryId == uuid) {
+        userBuilder.currentInventoryId = userBuilder.knownInventories[0];
+      }
+
       await _invStoreService.updateUser(userBuilder);
     }
   }
 
-  Future<void> addInventory(String uuid) async {
-    if (!invUser.knownInventories.contains(uuid)) {
+  Future<InvMeta> addInventory(String uuid) async {
+    var meta = await _invStoreService.fetchInvMeta(uuid);
+
+    if (!invUser.knownInventories.contains(uuid) && !meta.unset) {
       var userBuilder = InvUserBuilder.fromUser(invUser)
-          ..knownInventories.add(uuid);
+        ..currentInventoryId = uuid
+        ..knownInventories.add(uuid);
       await _invStoreService.updateUser(userBuilder);
+
+    } else if (invUser.knownInventories.contains(uuid)) {
+      await this.selectInventory(uuid);
     }
+    return meta;
+  }
+
+  InvMetaBuilder createNewInventory() {
+    return _invStoreService.createNewMeta(invUser.userId);
   }
 }

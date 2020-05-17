@@ -59,6 +59,19 @@ class InvStoreService {
         });
   }
 
+  Future<InvMeta> fetchInvMeta(String uuid) async {
+    if (uuid == null || uuid.isEmpty) {
+      return InvMeta.unset(uuid: uuid);
+    }
+    
+    return _inventory.document(uuid).get()
+        .then((value) {
+          return value.exists
+            ? InvMeta.fromJson(value.data)
+            : InvMeta.unset(uuid: uuid);
+        });
+  }
+
   Stream<List<InvItem>> listenToInventoryList(String invMetaId) {
     return _inventory.document(invMetaId).collection(ITEMS).snapshots()
         .map((event) => event.documents

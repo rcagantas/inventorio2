@@ -8,11 +8,22 @@ class InvMeta implements Comparable {
   final String name;
   final String createdBy;
 
+  @JsonKey(ignore: true) final bool unset;
+
   InvMeta({
     this.uuid,
     this.name,
     this.createdBy
-  });
+  }) :
+    unset = false;
+
+  InvMeta.unset({
+    this.uuid
+  }) :
+    unset = true,
+    name = null,
+    createdBy = null
+  ;
 
   factory InvMeta.fromJson(Map<String, dynamic> json) => _$InvMetaFromJson(json);
   Map<String, dynamic> toJson() => _$InvMetaToJson(this);
@@ -31,24 +42,30 @@ class InvMetaBuilder {
   String uuid;
   String name;
   String createdBy;
+  bool unset;
 
   InvMetaBuilder({
     this.uuid,
     this.name,
     this.createdBy,
+    this.unset,
   });
 
-  InvMetaBuilder.fromInvMeta(InvMeta invMeta) {
+  InvMetaBuilder.fromMeta(InvMeta invMeta) {
     this..uuid = invMeta.uuid
       ..name = invMeta.name
-      ..createdBy = invMeta.createdBy;
+      ..createdBy = invMeta.createdBy
+      ..unset = invMeta.unset;
   }
 
   InvMeta build() {
+    if (uuid == null) {
+      throw UnsupportedError('InvMeta uuid cannot be null');
+    }
     return InvMeta(
-        name: this.name,
-        uuid: this.uuid,
-        createdBy: this.createdBy
+      name: this.name,
+      uuid: this.uuid,
+      createdBy: this.createdBy
     );
   }
 }

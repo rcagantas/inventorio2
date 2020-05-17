@@ -1,8 +1,10 @@
+import 'package:adaptive_dialog/adaptive_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:inventorio2/models/inv_meta.dart';
 import 'package:inventorio2/providers/inv_state.dart';
 import 'package:inventorio2/providers/user_state.dart';
 import 'package:inventorio2/widgets/inventory_edit/inventory_edit_page.dart';
@@ -43,7 +45,11 @@ class SettingsPage extends StatelessWidget {
               children: <Widget>[
                 FlatButton(
                   padding: EdgeInsets.all(8.0),
-                  onPressed: () {},
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, InventoryEditPage.ROUTE,
+                      arguments: invState.createNewInventory()
+                    );
+                  },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
@@ -56,8 +62,20 @@ class SettingsPage extends StatelessWidget {
                 FlatButton(
                   padding: EdgeInsets.all(8.0),
                   onPressed: () async {
-                    var code = await Navigator.pushNamed(context, ScanPage.ROUTE);
-                    await invState.addInventory(code);
+                    var popped = await Navigator.pushNamed(context, ScanPage.ROUTE);
+                    String uuid = popped?.toString() ?? '';
+                    if (uuid.isNotEmpty) {
+                      var meta = await invState.addInventory(uuid);
+
+                      if (meta.unset) {
+                        await showOkAlertDialog(
+                          context: context,
+                          message: '${meta.uuid} is not a valid inventory code.'
+                        );
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    }
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -72,7 +90,7 @@ class SettingsPage extends StatelessWidget {
                   padding: EdgeInsets.all(8.0),
                   onPressed: () async {
                     await Navigator.pushNamed(context, InventoryEditPage.ROUTE,
-                      arguments: invState.selectedInvMeta()
+                      arguments: InvMetaBuilder.fromMeta(invState.selectedInvMeta())
                     );
                   },
                   child: Column(
@@ -88,7 +106,7 @@ class SettingsPage extends StatelessWidget {
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: invState.invMetas.length,
+                itemCount: invState.invMetas?.length ?? 0,
                 itemBuilder: (context, index) {
                   var count = invState.inventoryItemCount(invState.invMetas[index].uuid);
                   var text = count == 1? 'item': 'items';
@@ -100,7 +118,11 @@ class SettingsPage extends StatelessWidget {
                       Navigator.pop(context);
                       invState.selectInvMeta(invState.invMetas[index]);
                     },
-                    onLongPress: () {},
+                    onLongPress: () async {
+                      await Navigator.pushNamed(context, InventoryEditPage.ROUTE,
+                        arguments: InvMetaBuilder.fromMeta(invState.invMetas[index])
+                      );
+                    },
                   );
                 },
               )
