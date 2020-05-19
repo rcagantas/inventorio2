@@ -63,7 +63,7 @@ class MainPage extends StatelessWidget {
 
               if (code.isNotEmpty) {
                 var builder = InvItemBuilder(
-                  code: code.replaceAll('/', '#'),
+                  code: code,
                   inventoryId: invState.selectedInvMeta().uuid
                 );
 

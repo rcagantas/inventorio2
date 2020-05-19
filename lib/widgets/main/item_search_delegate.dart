@@ -9,7 +9,23 @@ import 'package:provider/provider.dart';
 class ItemSearchDelegate extends SearchDelegate<InvItem> {
 
   @override
-  ThemeData appBarTheme(BuildContext context) => Theme.of(context);
+  ThemeData appBarTheme(BuildContext context) {
+    var theme = Theme.of(context);
+    return theme
+    .copyWith(
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: TextStyle(
+          color: theme.disabledColor
+        ),
+      ),
+      primaryTextTheme: theme.primaryTextTheme,
+      textTheme: theme.textTheme.copyWith(
+        headline6: theme.textTheme.headline6.copyWith(
+          color: theme.primaryTextTheme.headline6.color
+        )
+      )
+    );
+  }
 
   @override
   List<Widget> buildActions(BuildContext context) {

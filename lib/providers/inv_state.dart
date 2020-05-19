@@ -195,6 +195,7 @@ class InvState with ChangeNotifier {
     expiryList = expiryList.sublist(0, expiryList.length > 64? 64 : expiryList.length);
 
     await _invSchedulerService.clearScheduledTasks();
+    logger.i('Running scheduler for ${expiryList.length} items');
     expiryList.forEach(_invSchedulerService.scheduleNotification);
   }
 

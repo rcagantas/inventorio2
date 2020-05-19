@@ -27,7 +27,7 @@ class UserState with ChangeNotifier {
   }
 
   UserState() :
-        _invAuthService = GetIt.instance<InvAuthService>()
+    _invAuthService = GetIt.instance<InvAuthService>()
   {
     setStatus(InvStatus.Uninitialized);
     _invAuthService.onAuthStateChanged.listen(_onAuthStateChanged);
