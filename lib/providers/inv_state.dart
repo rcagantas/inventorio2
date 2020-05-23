@@ -281,7 +281,11 @@ class InvState with ChangeNotifier {
   }
 
   List<InvItem> selectedInvList() {
-    return _invItemMap[invUser.currentInventoryId] ?? [InvItem.unset()];
+    return _invItemMap[invUser.currentInventoryId] ?? [];
+  }
+
+  bool isLoading() {
+    return _invItemMap[invUser.currentInventoryId] == null;
   }
 
   InvProduct getProduct(String code) {

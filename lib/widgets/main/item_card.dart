@@ -29,20 +29,6 @@ class ItemCard extends StatelessWidget {
       builder: (context, invState, child) {
         Color expiryColor = getExpiryColor();
 
-        if (item.unset) {
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              height: 100.0,
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).disabledColor),
-                ),
-              ),
-            ),
-          );
-        }
-
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
           child: Card(

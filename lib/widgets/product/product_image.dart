@@ -7,7 +7,7 @@ class ProductImage extends StatelessWidget {
 
   final String imageUrl;
   final String heroCode;
-  final String fallbackFilePath = 'resources/icons/icon_small.png';
+  static final String fallbackFilePath = 'resources/icons/icon_small.png';
   final BorderRadius borderRadius;
 
   ProductImage({

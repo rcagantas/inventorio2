@@ -6,6 +6,7 @@ import 'package:inventorio2/widgets/expiry/expiry_page.dart';
 import 'package:inventorio2/widgets/main/item_card.dart';
 import 'package:inventorio2/widgets/main/item_search_delegate.dart';
 import 'package:inventorio2/widgets/main/title_card.dart';
+import 'package:inventorio2/widgets/product/product_image.dart';
 import 'package:inventorio2/widgets/scan/scan_page.dart';
 import 'package:inventorio2/widgets/settings/settings_page.dart';
 import 'package:provider/provider.dart';
@@ -31,8 +32,12 @@ class MainPage extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: Text('${invState.selectedInvMeta().name}'),
-            leading: IconButton(
-              icon: Icon(Icons.account_circle),
+            leading: FlatButton(
+              padding: EdgeInsets.all(10.0),
+              child: CircleAvatar(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                child: Image.asset(ProductImage.fallbackFilePath, fit: BoxFit.cover,)
+              ),
               onPressed: () async {
                 await Navigator.pushNamed(context, SettingsPage.ROUTE);
               },
@@ -80,15 +85,22 @@ class MainPage extends StatelessWidget {
             )
           ),
           body: Visibility(
-            visible: invState.selectedInvList().isNotEmpty,
-            child: ListView.builder(
-              itemBuilder: (context, index) {
-                InvItem invItem = invState.selectedInvList()[index];
-                return ItemCard(invItem);
-              },
-              itemCount: invState.selectedInvList().length
+            visible: !invState.isLoading(),
+            child: Visibility(
+              visible: invState.selectedInvList().isNotEmpty,
+              child: ListView.builder(
+                itemCount: invState.selectedInvList().length,
+                itemBuilder: (context, index) {
+                  var item = invState.selectedInvList()[index];
+                  return ItemCard(item);
+                },
+              ),
+              replacement: TitleCard(),
             ),
-            replacement: TitleCard(),
+            replacement: SizedBox(
+              height: 3.0,
+              child: LinearProgressIndicator(),
+            ),
           ),
         );
       },

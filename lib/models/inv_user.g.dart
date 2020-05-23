@@ -8,10 +8,10 @@ part of 'inv_user.dart';
 
 InvUser _$InvUserFromJson(Map<String, dynamic> json) {
   return InvUser(
-    knownInventories:
-        (json['knownInventories'] as List)?.map((e) => e as String)?.toList(),
     userId: json['userId'] as String,
     currentInventoryId: json['currentInventoryId'] as String,
+    knownInventories:
+        (json['knownInventories'] as List)?.map((e) => e as String)?.toList(),
     currentVersion: json['currentVersion'] as String,
   );
 }
