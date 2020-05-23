@@ -86,6 +86,7 @@ flutter:
     - resources/icons/icon.png
     - resources/icons/icon_transparent.png
     - resources/icons/icon_small.png
+    - resources/icons/icon_small_white.png
     - resources/icons/apple_logo.png
     - resources/icons/google_logo.png
 
