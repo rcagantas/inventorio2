@@ -98,7 +98,9 @@ class InvProductBuilder {
 
   InvProduct build() {
     if (this.name == null || this.name.isEmpty) {
-      return InvProduct.unset(code: this.code);
+      throw UnsupportedError(
+        'InvProductBuilder cannot build with name $name'
+      );
     }
 
     return InvProduct(

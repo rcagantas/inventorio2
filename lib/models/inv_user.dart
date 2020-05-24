@@ -44,11 +44,8 @@ class InvUserBuilder {
     this.userId,
     this.currentInventoryId,
     this.currentVersion,
-  }) :
-        unset = false;
-
-  InvUserBuilder.unset() :
-        unset = true;
+    this.unset,
+  });
 
   InvUserBuilder.fromUser(InvUser invUser) {
     this..knownInventories = new List<String>.from(invUser.knownInventories)
@@ -58,7 +55,20 @@ class InvUserBuilder {
       ..unset = invUser.unset;
   }
 
+  void validate() {
+    if (userId == null) {
+      throw UnsupportedError('InvUserBuilder cannot build with userId $userId');
+    } else if (currentInventoryId == null || currentInventoryId.isEmpty) {
+      throw UnsupportedError('InvUserBuilder cannot build with currentInventoryId $currentInventoryId');
+    } else if (knownInventories == null || knownInventories.isEmpty) {
+      throw UnsupportedError('InvUserBuilder cannot build with knownInventories $knownInventories');
+    } else if (!knownInventories.contains(currentInventoryId)) {
+      throw UnsupportedError('InvUserBuilder cannot build with $currentInventoryId not a member of $knownInventories');
+    }
+  }
+
   InvUser build() {
+    validate();
     return InvUser(
         knownInventories: knownInventories,
         currentInventoryId: currentInventoryId,

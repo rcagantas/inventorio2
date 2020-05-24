@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -15,16 +16,17 @@ class InvItem {
   @JsonKey(ignore: true) final bool unset;
   @JsonKey(ignore: true) final int redOffset = 7;
   @JsonKey(ignore: true) final int yellowOffset = 30;
+  @JsonKey(ignore: true) static Clock clock = Clock();
 
   DateTime get expiryDate => expiry == null
-      ? DateTime.now()
+      ? clock.now().add(Duration(days: 30))
       : DateTime.parse(expiry);
 
   DateTime get redAlarm => expiryDate.subtract(Duration(days: redOffset));
   DateTime get yellowAlarm => expiryDate.subtract(Duration(days: yellowOffset));
 
-  bool get withinRed => redAlarm.difference(DateTime.now()).inDays <= 0;
-  bool get withinYellow => yellowAlarm.difference(DateTime.now()).inDays <= 0;
+  bool get withinRed => redAlarm.difference(clock.now()).inDays <= 0;
+  bool get withinYellow => yellowAlarm.difference(clock.now()).inDays <= 0;
 
   String get heroCode => uuid + '_' + code;
 
@@ -33,9 +35,9 @@ class InvItem {
     String dateAdded = this.dateAdded;
     String inventoryId = this.inventoryId;
 
-    if (this.expiry == null) { expiry = DateTime.now().toIso8601String(); }
+    if (this.expiry == null) { expiry = expiryDate.toIso8601String(); }
     if (this.dateAdded == null) {
-      dateAdded = DateTime.now()
+      dateAdded = clock.now()
           .subtract(Duration(days: 365))
           .toIso8601String();
     }
@@ -101,12 +103,12 @@ class InvItemBuilder {
 
   DateTime get expiryDate {
     return expiry == null
-        ? DateTime.now().add(Duration(days: 30))
+        ? InvItem.clock.now().add(Duration(days: 30))
         : DateTime.tryParse(expiry);
   }
 
   set expiryDate(DateTime expiryDateTime) {
-    DateTime now = DateTime.now();
+    DateTime now = InvItem.clock.now();
     expiryDateTime = expiryDateTime.add(
         Duration(hours: now.hour, minutes: now.minute + 1, seconds: now.second)
     );
@@ -148,7 +150,13 @@ class InvItemBuilder {
   }
 
   void validate() {
-    DateTime now = DateTime.now();
+    if (code == null || inventoryId == null) {
+      throw UnsupportedError(
+        'InvItemBuilder cannot build with code $code and inventoryId $inventoryId'
+      );
+    }
+
+    DateTime now = InvItem.clock.now();
     dateAdded = dateAdded == null
         ? now.toIso8601String()
         : dateAdded;
