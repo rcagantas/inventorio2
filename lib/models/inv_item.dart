@@ -168,8 +168,6 @@ class InvItemBuilder {
     uuid = uuid == null
         ? generateUuid()
         : uuid;
-
-    code = code.replaceAll('/', '#');
   }
 
   Map<String, dynamic> toJson() {

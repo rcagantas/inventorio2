@@ -94,6 +94,7 @@ class InvState with ChangeNotifier {
     if (_userSubscription != null) {
       await _userSubscription.cancel();
       await _cancelSubscriptions();
+      _userSubscription = null;
     }
   }
 
@@ -228,6 +229,7 @@ class InvState with ChangeNotifier {
   }
 
   Future<InvProduct> fetchProduct(String code) async {
+    code = sanitizeCode(code);
 
     if (getProduct(code).unset) {
       _subscribeToProduct(invUser.currentInventoryId, code);
@@ -288,7 +290,13 @@ class InvState with ChangeNotifier {
     return _invItemMap[invUser.currentInventoryId] == null;
   }
 
+  static String sanitizeCode(String code) {
+    return code.replaceAll('/', '#');
+  }
+
+
   InvProduct getProduct(String code) {
+    code = sanitizeCode(code);
     InvProduct defaultProduct = InvProduct.unset(code: code);
     InvProduct master = _invProductMap.containsKey(code) ? _invProductMap[code] : defaultProduct;
     InvProduct local = _invLocalProductMap.containsKey(code) ? _invLocalProductMap[code] : defaultProduct;
