@@ -61,9 +61,9 @@ class UserState with ChangeNotifier {
   }
 
   void _onAuthStateChanged(InvAuth invAuth) {
-    if (invAuth == null || invAuth == this.invAuth) {
+    if (invAuth == null) {
       setStatus(InvStatus.Unauthenticated);
-    } else {
+    } else if (invAuth != this.invAuth){
       this.invAuth = invAuth;
       setStatus(InvStatus.Authenticated);
       logger.i('Signed-in with ${invAuth.email} $_status.');

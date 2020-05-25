@@ -69,22 +69,8 @@ class InvState with ChangeNotifier {
     );
 
     _sortingFunctionMap = {
-      InvSort.EXPIRY: (InvItem item1, InvItem item2) {
-        _itemValidationCheck(item1);
-        _itemValidationCheck(item2);
-
-        int comparison = item1.expiry.compareTo(item2.expiry);
-        return comparison != 0 ? comparison : productSort(item1, item2);
-      },
-
-      InvSort.DATE_ADDED: (InvItem item1, InvItem item2) {
-        _itemValidationCheck(item1);
-        _itemValidationCheck(item2);
-
-        int comparison = item2.dateAdded.compareTo(item1.dateAdded);
-        return comparison != 0 ? comparison : productSort(item1, item2);
-      },
-
+      InvSort.EXPIRY: expirySort,
+      InvSort.DATE_ADDED: dateSort,
       InvSort.PRODUCT: productSort
     };
 
@@ -336,6 +322,22 @@ class InvState with ChangeNotifier {
 
   int productSort(InvItem item1, InvItem item2) {
     return getProduct(item1.code).compareTo(getProduct(item2.code));
+  }
+
+  int dateSort(InvItem item1, InvItem item2) {
+    _itemValidationCheck(item1);
+    _itemValidationCheck(item2);
+
+    int comparison = item2.dateAdded.compareTo(item1.dateAdded);
+    return comparison != 0 ? comparison : productSort(item1, item2);
+  }
+
+  int expirySort(InvItem item1, InvItem item2) {
+    _itemValidationCheck(item1);
+    _itemValidationCheck(item2);
+
+    int comparison = item1.expiry.compareTo(item2.expiry);
+    return comparison != 0 ? comparison : productSort(item1, item2);
   }
 
   int Function(InvItem item1, InvItem item2) getSortingFunction(InvSort sortingKey) {
