@@ -22,7 +22,7 @@ class InvSchedulerService {
 
     this.notificationsPlugin.initialize(
       InitializationSettings(
-        AndroidInitializationSettings('ic_alert'),
+        AndroidInitializationSettings('@mipmap/ic_launcher'),
         IOSInitializationSettings(
           requestSoundPermission: true,
           requestBadgePermission: true,
@@ -47,6 +47,12 @@ class InvSchedulerService {
 
   Future<void> clearScheduledTasks() async {
     await notificationsPlugin.cancelAll();
+  }
+
+  Future<void> delayedScheduleNotification(InvExpiry expiry, int delayMs) async {
+    await Future.delayed(Duration(milliseconds: delayMs), () {
+      scheduleNotification(expiry);
+    });
   }
 
   Future<void> scheduleNotification(InvExpiry expiry) async {

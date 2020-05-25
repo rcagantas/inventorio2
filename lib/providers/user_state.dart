@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inventorio2/models/inv_auth.dart';
+import 'package:inventorio2/models/inv_status.dart';
 import 'package:inventorio2/services/inv_auth_service.dart';
 import 'package:inventorio2/utils/log/log_printer.dart';
 import 'package:logger/logger.dart';
-
-enum InvStatus {
-  Uninitialized,
-  Authenticating,
-  Authenticated,
-  Unauthenticated
-}
 
 class UserState with ChangeNotifier {
   final logger = Logger(printer: SimpleLogPrinter('UserState'));

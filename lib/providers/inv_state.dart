@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:clock/clock.dart';
 import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_native_image/flutter_native_image.dart';
@@ -11,6 +12,7 @@ import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_meta.dart';
 import 'package:inventorio2/models/inv_product.dart';
 import 'package:inventorio2/models/inv_user.dart';
+import 'package:inventorio2/models/inv_status.dart';
 import 'package:inventorio2/services/inv_scheduler_service.dart';
 import 'package:inventorio2/services/inv_store_service.dart';
 import 'package:inventorio2/utils/log/log_printer.dart';
@@ -24,7 +26,9 @@ enum InvSort {
 
 class InvState with ChangeNotifier {
   final logger = Logger(printer: SimpleLogPrinter('InvState'));
+  Clock clock = Clock();
 
+  InvStatus currentInvStatus;
   InvUser invUser;
   Map<String, InvMeta> _invMetas = {};
   Map<String, List<InvItem>> _invItemMap = {};
@@ -84,6 +88,19 @@ class InvState with ChangeNotifier {
       InvSort.PRODUCT: productSort
     };
 
+  }
+
+  void userStateChange({InvStatus status, InvAuth auth}) {
+    if (currentInvStatus != status) {
+      currentInvStatus = status;
+
+      if (currentInvStatus == InvStatus.Unauthenticated) {
+        this.clear();
+      } else if (currentInvStatus == InvStatus.Authenticated) {
+        this.loadUserId(auth);
+      }
+
+    }
   }
 
   Future<void> clear() async {
@@ -191,13 +208,19 @@ class InvState with ChangeNotifier {
       expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.yellowOffset));
     }
 
-    var now = DateTime.now();
+    var now = clock.now();
     expiryList..removeWhere((element) => element.alertDate.compareTo(now) < 0)..sort();
     expiryList = expiryList.sublist(0, expiryList.length > 64? 64 : expiryList.length);
 
     await _invSchedulerService.clearScheduledTasks();
     logger.i('Running scheduler for ${expiryList.length} items');
-    expiryList.forEach(_invSchedulerService.scheduleNotification);
+
+    Future.delayed(Duration(milliseconds: 500), () {
+      for (var expiry in expiryList) {
+        var delayMs = 50 * expiryList.indexOf(expiry);
+        _invSchedulerService.delayedScheduleNotification(expiry, delayMs);
+      }
+    });
   }
 
   void _onInvList(String invMetaId, List<InvItem> list) async {

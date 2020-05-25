@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inventorio2/models/inv_status.dart';
 import 'package:inventorio2/providers/user_state.dart';
 import 'package:inventorio2/services/inv_auth_service.dart';
 import 'package:mockito/mockito.dart';
