@@ -128,12 +128,17 @@ void main() {
       });
 
       when(storeServiceMock.listenToInventoryList(any)).thenAnswer((realInvocation) {
-        var expiry = frozenDate.toIso8601String();
-        var added = frozenDate.toIso8601String();
+        var expiry1 = frozenDate.toIso8601String(),
+            expiry2 = frozenDate.subtract(Duration(days: 2)).toIso8601String(),
+            expiry3 = frozenDate.subtract(Duration(days: 1)).toIso8601String();
+        var added1 = frozenDate.toIso8601String(),
+            added2 = frozenDate.add(Duration(days: 1)).toIso8601String(),
+            added3 = frozenDate.add(Duration(days: 2)).toIso8601String();
+
         return Stream.value([
-          InvItem(uuid: 'item_uid_1', code: '01', inventoryId: 'inv_id', expiry: expiry, dateAdded: added),
-          InvItem(uuid: 'item_uid_2', code: '02', inventoryId: 'inv_id', expiry: expiry, dateAdded: added),
-          InvItem(uuid: 'item_uid_3', code: '03', inventoryId: 'inv_id', expiry: expiry, dateAdded: added),
+          InvItem(uuid: 'item_uid_1', code: '01', inventoryId: 'inv_id', expiry: expiry1, dateAdded: added1),
+          InvItem(uuid: 'item_uid_2', code: '02', inventoryId: 'inv_id', expiry: expiry2, dateAdded: added2),
+          InvItem(uuid: 'item_uid_3', code: '03', inventoryId: 'inv_id', expiry: expiry3, dateAdded: added3),
         ]);
       });
 
@@ -186,21 +191,21 @@ void main() {
       InvItem.clock = Clock();
     });
 
-    test('load user on state change', () async {
+    test('should load user on state change', () async {
       invState = InvState();
       await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-      verify(storeServiceMock.migrateUserFromGoogleIdIfPossible(any)).called(1);
 
       expect(invState.isLoading(), isTrue);
       await Future.delayed(Duration(milliseconds: 10), () {
         verify(storeServiceMock.listenToUser('user_id')).called(1);
         verify(storeServiceMock.listenToInventoryList('inv_id')).called(1);
         verify(storeServiceMock.listenToInventoryMeta('inv_id')).called(1);
-        verify(storeServiceMock.listenToLocalProduct('inv_id', '01')).called(1);
-        verify(storeServiceMock.listenToProduct('01')).called(1);
-        verify(storeServiceMock.fetchLocalProduct('inv_id', '01')).called(1);
-        verify(storeServiceMock.fetchProduct('01')).called(1);
+        verify(storeServiceMock.listenToLocalProduct('inv_id', any)).called(3);
+        verify(storeServiceMock.listenToProduct(any)).called(3);
         expect(invState.isLoading(), isFalse);
+        expect(invState.selectedInvMeta().uuid, 'inv_id');
+        expect(invState.invMetas.map((e) => e.uuid), ['inv_id']);
+        expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_2', 'item_uid_3', 'item_uid_1']);
       });
     });
 
@@ -220,14 +225,14 @@ void main() {
       verify(storeServiceMock.createNewMeta('user_id')).called(1);
     });
 
-    test('logout should cancel subscriptions', () async {
+    test('should cancel subscriptions on logout', () async {
       invState = InvState();
       await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
       await invState.clear();
       expect(invState.invUser.unset, isTrue);
     });
 
-    test('auto sort when you change selected inventories', () async {
+    test('should listen to user changes', () async {
       when(storeServiceMock.listenToUser(any)).thenAnswer((realInvocation) {
         var userId = realInvocation.positionalArguments[0];
         return Stream.fromIterable([
@@ -250,7 +255,31 @@ void main() {
       expect(invState.selectedInvMeta().name, 'Inventory');
       await Future.delayed(Duration(milliseconds: 10), () {
         expect(invState.selectedInvMeta().uuid, 'inv_id2');
+        expect(invState.invMetas.map((e) => e.uuid), ['inv_id', 'inv_id2']);
       });
+    });
+
+    test('should toggle sorting by cycling modes', () async {
+      invState = InvState();
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+
+      expect(invState.sortingKey, InvSort.EXPIRY);
+      await Future.delayed(Duration(milliseconds: 10), () {
+        expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_2', 'item_uid_3', 'item_uid_1']);
+      });
+
+      invState.toggleSort();
+      expect(invState.sortingKey, InvSort.DATE_ADDED);
+      await Future.delayed(Duration(milliseconds: 10), () {
+        expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_3', 'item_uid_2', 'item_uid_1']);
+      });
+
+      invState.toggleSort();
+      expect(invState.sortingKey, InvSort.PRODUCT);
+      await Future.delayed(Duration(milliseconds: 10), () {
+        expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_1', 'item_uid_2', 'item_uid_3']);
+      });
+
     });
 
   });
