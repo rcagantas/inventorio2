@@ -161,6 +161,25 @@ void main() {
         var code = realInvocation.positionalArguments[1];
         return Future.value(InvProduct(code: code, name: 'product_$code', brand: 'brand_$code', variant: 'variant_$code'));
       });
+
+      when(storeServiceMock.createNewMeta(any)).thenAnswer((realInvocation) {
+        var createdByUid = realInvocation.positionalArguments[0];
+        return InvMetaBuilder(
+          name: 'new_inventory',
+          uuid: 'new_inv_id',
+          createdBy: createdByUid,
+        );
+      });
+
+      when(storeServiceMock.createNewUser(any)).thenAnswer((realInvocation) {
+        var userId = realInvocation.positionalArguments[0];
+        var meta = storeServiceMock.createNewMeta(userId);
+        return InvUser(
+          userId: userId,
+          knownInventories: [meta.uuid],
+          currentInventoryId: meta.uuid,
+        );
+      });
     });
 
     tearDown(() {
@@ -169,9 +188,10 @@ void main() {
 
     test('load user on state change', () async {
       invState = InvState();
-      invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
       verify(storeServiceMock.migrateUserFromGoogleIdIfPossible(any)).called(1);
 
+      expect(invState.isLoading(), isTrue);
       await Future.delayed(Duration(milliseconds: 10), () {
         verify(storeServiceMock.listenToUser('user_id')).called(1);
         verify(storeServiceMock.listenToInventoryList('inv_id')).called(1);
@@ -180,6 +200,56 @@ void main() {
         verify(storeServiceMock.listenToProduct('01')).called(1);
         verify(storeServiceMock.fetchLocalProduct('inv_id', '01')).called(1);
         verify(storeServiceMock.fetchProduct('01')).called(1);
+        expect(invState.isLoading(), isFalse);
+      });
+    });
+
+    test('should persist new user', () async {
+      when(storeServiceMock.listenToUser(any)).thenAnswer((realInvocation) {
+        var userId = realInvocation.positionalArguments[0];
+        return Stream.value(InvUser.unset(
+          userId: userId,
+        ));
+      });
+
+      invState = InvState();
+
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+      verify(storeServiceMock.migrateUserFromGoogleIdIfPossible(any)).called(1);
+      verify(storeServiceMock.createNewUser('user_id')).called(1);
+      verify(storeServiceMock.createNewMeta('user_id')).called(1);
+    });
+
+    test('logout should cancel subscriptions', () async {
+      invState = InvState();
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+      await invState.clear();
+      expect(invState.invUser.unset, isTrue);
+    });
+
+    test('auto sort when you change selected inventories', () async {
+      when(storeServiceMock.listenToUser(any)).thenAnswer((realInvocation) {
+        var userId = realInvocation.positionalArguments[0];
+        return Stream.fromIterable([
+          InvUser(
+            userId: userId,
+            currentInventoryId: 'inv_id',
+            knownInventories: ['inv_id', 'inv_id2']
+          ),
+          InvUser(
+              userId: userId,
+              currentInventoryId: 'inv_id2',
+              knownInventories: ['inv_id', 'inv_id2']
+          ),
+        ]);
+
+      });
+
+      invState = InvState();
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+      expect(invState.selectedInvMeta().name, 'Inventory');
+      await Future.delayed(Duration(milliseconds: 10), () {
+        expect(invState.selectedInvMeta().uuid, 'inv_id2');
       });
     });
 

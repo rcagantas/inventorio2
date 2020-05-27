@@ -76,14 +76,14 @@ class InvState with ChangeNotifier {
 
   }
 
-  void userStateChange({InvStatus status, InvAuth auth}) {
+  Future<void> userStateChange({InvStatus status, InvAuth auth}) async {
     if (currentInvStatus != status) {
       currentInvStatus = status;
 
       if (currentInvStatus == InvStatus.Unauthenticated) {
         this.clear();
       } else if (currentInvStatus == InvStatus.Authenticated) {
-        this.loadUserId(auth);
+        await this.loadUserId(auth);
       }
 
     }
@@ -171,7 +171,7 @@ class InvState with ChangeNotifier {
       });
     });
   }
-  
+
   void _runSchedulerWhenListComplete() async {
     var population = invUser.knownInventories
         .countWhere((element) => _invItemMap.containsKey(element));
@@ -186,8 +186,8 @@ class InvState with ChangeNotifier {
     for (InvItem item in listToSchedule) {
       var product = await fetchProduct(item.code);
       if (product.unset) {
-        logger.i('Product information is not ready. Delaying scheduling.');
-        return;
+        logger.e('Product information is not ready. Skipping scheduling for ${item.uuid}.');
+        continue;
       }
 
       expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.redOffset));
@@ -219,7 +219,7 @@ class InvState with ChangeNotifier {
         _subscribeToProduct(invMetaId, invItem.code);
       }
     }
-    
+
     notifyListeners();
 
     _runSchedulerWhenListComplete();
@@ -285,16 +285,6 @@ class InvState with ChangeNotifier {
     }
   }
 
-  InvMeta selectedInvMeta() {
-    return _invMetas.containsKey(invUser.currentInventoryId)
-        ? _invMetas[invUser.currentInventoryId]
-        : InvMeta(name: 'Inventory');
-  }
-
-  List<InvItem> selectedInvList() {
-    return _invItemMap[invUser.currentInventoryId] ?? [];
-  }
-
   bool isLoading() {
     return _invItemMap[invUser.currentInventoryId] == null;
   }
@@ -324,14 +314,6 @@ class InvState with ChangeNotifier {
     return getProduct(item1.code).compareTo(getProduct(item2.code));
   }
 
-  int dateSort(InvItem item1, InvItem item2) {
-    _itemValidationCheck(item1);
-    _itemValidationCheck(item2);
-
-    int comparison = item2.dateAdded.compareTo(item1.dateAdded);
-    return comparison != 0 ? comparison : productSort(item1, item2);
-  }
-
   int expirySort(InvItem item1, InvItem item2) {
     _itemValidationCheck(item1);
     _itemValidationCheck(item2);
@@ -340,8 +322,26 @@ class InvState with ChangeNotifier {
     return comparison != 0 ? comparison : productSort(item1, item2);
   }
 
+  int dateSort(InvItem item1, InvItem item2) {
+    _itemValidationCheck(item1);
+    _itemValidationCheck(item2);
+
+    int comparison = item2.dateAdded.compareTo(item1.dateAdded);
+    return comparison != 0 ? comparison : productSort(item1, item2);
+  }
+
   int Function(InvItem item1, InvItem item2) getSortingFunction(InvSort sortingKey) {
     return _sortingFunctionMap[sortingKey];
+  }
+
+  InvMeta selectedInvMeta() {
+    return _invMetas.containsKey(invUser.currentInventoryId)
+        ? _invMetas[invUser.currentInventoryId]
+        : InvMeta(name: 'Inventory');
+  }
+
+  List<InvItem> selectedInvList() {
+    return _invItemMap[invUser.currentInventoryId] ?? [];
   }
 
   void toggleSort() {
