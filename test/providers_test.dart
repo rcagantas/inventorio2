@@ -123,7 +123,7 @@ void main() {
         return Stream.value(InvUser(
           userId: userId,
           currentInventoryId: 'inv_id',
-          knownInventories: ['inv_id']
+          knownInventories: ['inv_id', 'inv_id2']
         ));
       });
 
@@ -204,8 +204,9 @@ void main() {
         verify(storeServiceMock.listenToProduct(any)).called(3);
         expect(invState.isLoading(), isFalse);
         expect(invState.selectedInvMeta().uuid, 'inv_id');
-        expect(invState.invMetas.map((e) => e.uuid), ['inv_id']);
+        expect(invState.invMetas.map((e) => e.uuid), ['inv_id', 'inv_id2']);
         expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_2', 'item_uid_3', 'item_uid_1']);
+        expect(invState.inventoryItemCount('inv_id'), 3);
       });
     });
 
@@ -280,6 +281,26 @@ void main() {
         expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_1', 'item_uid_2', 'item_uid_3']);
       });
 
+    });
+
+    test('select inventory should update user', () async {
+      invState = InvState();
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+      await invState.selectInventory('inv_id2');
+
+      var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_id2';
+      var verification = verify(storeServiceMock.updateUser(captureAny))..called(1);
+      expect(verification.captured.single.currentInventoryId, expected.currentInventoryId);
+    });
+
+    test('selecting inv meta should select inventory', () async {
+      invState = InvState();
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+      await invState.selectInvMeta(InvMeta(uuid: 'inv_id2'));
+
+      var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_id2';
+      var verification = verify(storeServiceMock.updateUser(captureAny))..called(1);
+      expect(verification.captured.single.currentInventoryId, expected.currentInventoryId);
     });
 
   });

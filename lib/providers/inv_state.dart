@@ -303,29 +303,16 @@ class InvState with ChangeNotifier {
     return !local.unset ? local : master;
   }
 
-  void _itemValidationCheck(InvItem item) {
-    String msg;
-    if (item.expiry == null)  msg = 'Expiry date is unset for ${item.toJson()}';
-    if (item.dateAdded == null) msg = 'Date added is unset for ${item.toJson()}';
-    if (msg != null) throw Exception(msg);
-  }
-
   int productSort(InvItem item1, InvItem item2) {
     return getProduct(item1.code).compareTo(getProduct(item2.code));
   }
 
   int expirySort(InvItem item1, InvItem item2) {
-    _itemValidationCheck(item1);
-    _itemValidationCheck(item2);
-
     int comparison = item1.expiry.compareTo(item2.expiry);
     return comparison != 0 ? comparison : productSort(item1, item2);
   }
 
   int dateSort(InvItem item1, InvItem item2) {
-    _itemValidationCheck(item1);
-    _itemValidationCheck(item2);
-
     int comparison = item2.dateAdded.compareTo(item1.dateAdded);
     return comparison != 0 ? comparison : productSort(item1, item2);
   }
@@ -344,6 +331,10 @@ class InvState with ChangeNotifier {
     return _invItemMap[invUser.currentInventoryId] ?? [];
   }
 
+  int inventoryItemCount(String metaId) {
+    return _invItemMap[metaId]?.length ?? 0;
+  }
+
   void toggleSort() {
     var index = InvSort.values.indexOf(sortingKey);
     sortingKey = InvSort.values[(index + 1) % InvSort.values.length];
@@ -360,10 +351,6 @@ class InvState with ChangeNotifier {
         ..currentInventoryId = metaId;
       await _invStoreService.updateUser(userBuilder);
     }
-  }
-
-  int inventoryItemCount(String metaId) {
-    return _invItemMap[metaId]?.length ?? 0;
   }
 
   Future<void> selectInvMeta(InvMeta invMeta) async {

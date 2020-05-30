@@ -205,6 +205,7 @@ void main() {
       var item1 = InvItem(uuid: 'uid', code: '01', expiry: date, dateAdded: date, inventoryId: 'inv id');
       var item2 = InvItem(uuid: 'uid', code: '01', expiry: date, dateAdded: date, inventoryId: 'inv id');
       expect(item1.hashCode, item2.hashCode);
+      expect(item1 == item2, isTrue);
     });
   });
 
@@ -373,6 +374,7 @@ void main() {
       var product1 = InvProduct(code: '01', imageUrl: 'http://x', brand: 'brand', name: 'name', variant: '1');
       var product2 = InvProduct(code: '01', imageUrl: 'http://x', brand: 'brand', name: 'name', variant: '1');
       expect(product1.hashCode, product2.hashCode);
+      expect(product1 == product2, isTrue);
     });
   });
 
@@ -431,12 +433,19 @@ void main() {
       expect(user.currentInventoryId, 'id');
     });
 
-    test('build from product', () {
+    test('build from user', () {
       var user = InvUser(userId: 'userId', currentInventoryId: 'id', knownInventories: ['id']);
       var builder = InvUserBuilder.fromUser(user);
 
       expect(builder.build().toJson(), user.toJson());
       expect(builder.toJson(), user.toJson());
+    });
+
+    test('should be equal', () {
+      var builder1 = InvUserBuilder(userId: 'user_id', currentInventoryId: 'inv_id', knownInventories: ['inv_id']);
+      var builder2 = InvUserBuilder(userId: 'user_id', currentInventoryId: 'inv_id', knownInventories: ['inv_id']);
+
+      expect(builder1.toJson(), builder2.toJson());
     });
 
     test('should throw with invalid user id', () {
