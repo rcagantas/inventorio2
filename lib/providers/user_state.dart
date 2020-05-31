@@ -69,4 +69,6 @@ class UserState with ChangeNotifier {
       logger.i('Signed-in with ${invAuth.email} $_status.');
     }
   }
+
+  Future<bool> isAppleSignInAvailable() => _invAuthService.isAppleSignInAvailable();
 }

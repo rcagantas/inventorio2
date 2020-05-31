@@ -98,7 +98,7 @@ void main() {
       GetIt.instance.registerLazySingleton(() => UserState());
       GetIt.instance.registerLazySingleton(() => InvState());
 
-      authServiceMock = GetIt.instance.get<InvAuthService>();
+      authServiceMock = GetIt.instance<InvAuthService>();
       when(authServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.fromIterable([]));
     });
 
@@ -109,14 +109,13 @@ void main() {
     });
 
     testWidgets('should show login screen when current login is unset', (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       when(authServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.fromIterable([null]));
+      when(authServiceMock.isAppleSignInAvailable()).thenAnswer((realInvocation) => Future.value(true));
 
       await tester.pumpWidget(MyApp());
-      await tester.pump(Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       expect(find.byKey(ObjectKey('google_sign_in')), findsOneWidget);
       expect(find.byKey(ObjectKey('apple_sign_in')), findsOneWidget);
-      debugDefaultTargetPlatformOverride = null;
     });
 
     testWidgets('should not show apple_sign_in in Android', (tester) async {
@@ -124,11 +123,24 @@ void main() {
       when(authServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.fromIterable([null]));
 
       await tester.pumpWidget(MyApp());
-      await tester.pump(Duration(milliseconds: 100));
+      await tester.pump();
       expect(find.byKey(ObjectKey('google_sign_in')), findsOneWidget);
       expect(find.byKey(ObjectKey('apple_sign_in')), findsNothing);
       debugDefaultTargetPlatformOverride = null;
     });
+
+    testWidgets('should not show apple_sign_in if IOS but older version', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      when(authServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.fromIterable([null]));
+      when(authServiceMock.isAppleSignInAvailable()).thenAnswer((realInvocation) => Future.value(false));
+
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      expect(find.byKey(ObjectKey('google_sign_in')), findsOneWidget);
+      expect(find.byKey(ObjectKey('apple_sign_in')), findsNothing);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
 
   });
 }

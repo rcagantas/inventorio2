@@ -103,4 +103,6 @@ class InvAuthService {
 
     logger.i('Signed out.');
   }
+
+  Future<bool> isAppleSignInAvailable() => AppleSignIn.isAvailable();
 }

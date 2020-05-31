@@ -1,4 +1,3 @@
-import 'package:apple_sign_in/apple_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:inventorio2/providers/user_state.dart';
@@ -41,15 +40,15 @@ class LoginPage extends StatelessWidget {
                     ),
                     onPressed: () => userState.signInWithGoogle(),
                   ),
-                  Visibility(
-                    visible: Theme.of(context).platform == TargetPlatform.iOS,
-                    replacement: Container(),
-                    child: FutureBuilder(
-                      key: ObjectKey('apple_sign_in'),
-                      future: AppleSignIn.isAvailable(),
-                      builder: (context, snapshot) {
+                  FutureBuilder(
+                    future: userState.isAppleSignInAvailable(),
+                    builder: (context, snapshot) {
 
-                        return OutlineButton(
+                      return Visibility(
+                        visible: snapshot.hasData && snapshot.data == true,
+                        replacement: Container(),
+                        child: OutlineButton(
+                          key: ObjectKey('apple_sign_in'),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -59,9 +58,9 @@ class LoginPage extends StatelessWidget {
                             ],
                           ),
                           onPressed: () => userState.signInWithApple(),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
