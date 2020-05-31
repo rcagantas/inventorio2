@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
@@ -101,19 +102,33 @@ void main() {
       when(authServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.fromIterable([]));
     });
 
-    testWidgets('Show splash screen on entry', (tester) async {
+    testWidgets('should show splash screen on entry', (tester) async {
       await tester.pumpWidget(MyApp());
 
       expect(find.byKey(ObjectKey('icon_small')), findsOneWidget);
     });
 
-    testWidgets('Show login screen when current login is unset', (tester) async {
+    testWidgets('should show login screen when current login is unset', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       when(authServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.fromIterable([null]));
 
       await tester.pumpWidget(MyApp());
       await tester.pump(Duration(milliseconds: 100));
       expect(find.byKey(ObjectKey('google_sign_in')), findsOneWidget);
       expect(find.byKey(ObjectKey('apple_sign_in')), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
     });
+
+    testWidgets('should not show apple_sign_in in Android', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      when(authServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.fromIterable([null]));
+
+      await tester.pumpWidget(MyApp());
+      await tester.pump(Duration(milliseconds: 100));
+      expect(find.byKey(ObjectKey('google_sign_in')), findsOneWidget);
+      expect(find.byKey(ObjectKey('apple_sign_in')), findsNothing);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
   });
 }

@@ -41,24 +41,27 @@ class LoginPage extends StatelessWidget {
                     ),
                     onPressed: () => userState.signInWithGoogle(),
                   ),
-                  FutureBuilder(
-                    key: ObjectKey('apple_sign_in'),
-                    future: AppleSignIn.isAvailable(),
-                    builder: (context, snapshot) {
-                      return snapshot.hasData
-                        ? OutlineButton(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Image.asset('resources/icons/apple_logo.png', height: 30.0,),
-                                Text('Sign in with Apple')
-                              ],
-                            ),
-                            onPressed: () => userState.signInWithApple(),
-                          )
-                        : Container();
-                    },
+                  Visibility(
+                    visible: Theme.of(context).platform == TargetPlatform.iOS,
+                    replacement: Container(),
+                    child: FutureBuilder(
+                      key: ObjectKey('apple_sign_in'),
+                      future: AppleSignIn.isAvailable(),
+                      builder: (context, snapshot) {
+
+                        return OutlineButton(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Image.asset('resources/icons/apple_logo.png', height: 30.0,),
+                              Text('Sign in with Apple')
+                            ],
+                          ),
+                          onPressed: () => userState.signInWithApple(),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
