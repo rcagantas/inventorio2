@@ -11,7 +11,7 @@ description: Basic home inventory in Flutter
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.0.0+1
+version: 2.0.0+2
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
@@ -64,7 +64,7 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: resources/icons/icon_dark.png
+  image_path: resources/icons/icon.png
 
 
 # For information on the generic Dart part of this file, see the
