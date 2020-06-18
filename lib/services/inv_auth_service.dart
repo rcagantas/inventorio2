@@ -24,7 +24,7 @@ class InvAuthService {
       email: user.email,
       displayName: user.displayName,
       photoUrl: user.photoUrl,
-      googleSignInId: InvAuth.pullGoogleUserId(user)
+      googleSignInId: _googleSignIn.currentUser?.id
     );
   });
 

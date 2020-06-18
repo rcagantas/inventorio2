@@ -1,11 +1,15 @@
-import 'package:firebase_auth/firebase_auth.dart';
-
 class InvAuth {
   final String email;
   final String displayName;
   final String photoUrl;
   final String uid;
   final String googleSignInId;
+
+  String get emailDisplay {
+    String display = this.email ?? '';
+    display = this.email.endsWith('appleid.com') ? 'hidden email': display;
+    return display;
+  }
 
   InvAuth({
     this.email,
@@ -14,14 +18,4 @@ class InvAuth {
     this.uid,
     this.googleSignInId
   });
-
-  static String pullGoogleUserId(FirebaseUser user) {
-    for (UserInfo info in user.providerData) {
-      if (info.providerId == 'google.com') {
-        return info.uid;
-      }
-    }
-
-    return '';
-  }
 }

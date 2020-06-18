@@ -155,13 +155,17 @@ class InvStoreService {
   }
 
   Future migrateUserFromGoogleIdIfPossible(InvAuth invAuth) async {
-    String googleSignInId = invAuth.googleSignInId;
-    String firebaseUid = invAuth.uid;
+    var firebaseUid = invAuth.uid;
+    var googleSignInId = invAuth.googleSignInId;
+
+    if (googleSignInId == null || googleSignInId == '') {
+      return;
+    }
 
     DocumentSnapshot googleSnapshot = await _users.document(googleSignInId).get();
-    DocumentSnapshot fireBaseSnapshot = await _users.document(firebaseUid).get();
+    DocumentSnapshot firebaseSnapshot = await _users.document(firebaseUid).get();
 
-    if (googleSnapshot.exists && !fireBaseSnapshot.exists) {
+    if (googleSnapshot.exists && !firebaseSnapshot.exists) {
       logger.i('Migrating gId $googleSignInId to $firebaseUid');
 
       InvUser googleInvUser = InvUser.fromJson(googleSnapshot.data);

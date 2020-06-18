@@ -1,6 +1,5 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:inventorio2/models/inv_auth.dart';
 import 'package:inventorio2/models/inv_expiry.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_meta.dart';
@@ -97,32 +96,6 @@ void main() {
       var expiry1Red = InvExpiry(item: item1, daysOffset: item1.redOffset);
 
       expect(expiry1Red.compareTo(item1), -1);
-    });
-  });
-
-  group('Auth', () {
-
-    test('pull Google User Id', () {
-      var appleUserInfo = FirebaseUserInfoMock();
-      var googleUserInfo = FirebaseUserInfoMock();
-      var fbUser = FirebaseUserMock();
-      
-      when(fbUser.providerData).thenReturn([
-        appleUserInfo,
-        googleUserInfo,
-      ]);
-
-      when(appleUserInfo.providerId).thenReturn('apple.com');
-      when(googleUserInfo.providerId).thenReturn('google.com');
-      when(googleUserInfo.uid).thenReturn('googleId');
-
-      var auth = InvAuth(
-        uid: 'uid',
-        googleSignInId: InvAuth.pullGoogleUserId(fbUser),
-      );
-
-      expect(auth.uid, 'uid');
-      expect(auth.googleSignInId, 'googleId');
     });
   });
 

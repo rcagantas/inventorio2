@@ -29,9 +29,9 @@ class SettingsPage extends StatelessWidget {
                     : CachedNetworkImageProvider(userState.invAuth.photoUrl),
               ),
               title: Text(userState.invAuth.displayName.isNullOrEmpty()
-                  ? 'Sign-in'
+                  ? 'Profile'
                   : '${userState.invAuth.displayName}'),
-              subtitle: Text(userState.invAuth.email ?? ''),
+              subtitle: Text(userState.invAuth.emailDisplay),
               trailing: IconButton(
                 tooltip: 'Log Out',
                 icon: Icon(Icons.exit_to_app),
