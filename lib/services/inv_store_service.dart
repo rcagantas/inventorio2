@@ -10,6 +10,7 @@ import 'package:inventorio2/models/inv_product.dart';
 import 'package:inventorio2/models/inv_user.dart';
 import 'package:inventorio2/utils/log/log_printer.dart';
 import 'package:logger/logger.dart';
+import 'package:package_info/package_info.dart';
 import 'package:uuid/uuid.dart';
 
 class InvContainer {
@@ -29,6 +30,7 @@ class InvStoreService {
 
   Firestore store;
   FirebaseStorage storage;
+  String _currentVersion;
 
   CollectionReference get _users => store.collection('users');
   CollectionReference get _inventory => store.collection('inventory');
@@ -39,7 +41,9 @@ class InvStoreService {
   InvStoreService({
     this.store,
     this.storage
-  });
+  }) {
+    PackageInfo.fromPlatform().then((value) => _currentVersion = '${value.version} build ${value.buildNumber}');
+  }
 
   Stream<InvUser> listenToUser(String uid) {
     return _users.document(uid).snapshots()
@@ -143,6 +147,7 @@ class InvStoreService {
   }
 
   Future<InvUser> updateUser(InvUserBuilder userBuilder) async {
+    userBuilder.currentVersion = _currentVersion;
     InvUser user = userBuilder.build();
     await _users.document(user.userId).setData(user.toJson());
     return user;

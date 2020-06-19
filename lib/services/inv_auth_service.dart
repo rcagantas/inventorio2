@@ -1,10 +1,10 @@
-import 'package:apple_sign_in/apple_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:inventorio2/models/inv_auth.dart';
 import 'package:inventorio2/utils/log/log_printer.dart';
 import 'package:logger/logger.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class InvAuthFailure implements Exception {
   String message;
@@ -16,7 +16,6 @@ class InvAuthService {
 
   FirebaseAuth _auth;
   GoogleSignIn _googleSignIn;
-  AppleIdCredential _appleIdCredential;
 
   Stream<InvAuth> get onAuthStateChanged => _auth.onAuthStateChanged.map((user) {
     return user == null ? null : InvAuth(
@@ -66,37 +65,31 @@ class InvAuthService {
 
   Future<void> signInWithApple() async {
     logger.i('Attempting to sign-in with Apple...');
-    AuthorizationResult result = await AppleSignIn.performRequests([
-      AppleIdRequest(requestedScopes: [Scope.email, Scope.fullName])
+    var credential = await SignInWithApple.getAppleIDCredential(scopes: [
+      AppleIDAuthorizationScopes.email,
+      AppleIDAuthorizationScopes.fullName,
     ]);
 
-    logger.i('Authorization result: ${result.status}');
-
-    switch (result.status) {
-      case AuthorizationStatus.cancelled:
-      case AuthorizationStatus.error:
-        throw new InvAuthFailure('${result.error}');
-        break;
-
-      case AuthorizationStatus.authorized:
-
-        _appleIdCredential = result.credential;
-
-        OAuthProvider oAuthProvider = new OAuthProvider(providerId: 'apple.com');
-        AuthCredential authCredential = oAuthProvider.getCredential(
-            idToken: String.fromCharCodes(_appleIdCredential.identityToken),
-            accessToken: String.fromCharCodes(_appleIdCredential.authorizationCode)
-        );
-
-        await _auth.signInWithCredential(authCredential);
-        break;
+    if (credential == null) {
+      throw InvAuthFailure('Failed to sign-in with Apple');
     }
+
+    logger.i('cred: $credential');
+
+    OAuthProvider oAuthProvider = new OAuthProvider(providerId: 'apple.com');
+    AuthCredential authCredential = oAuthProvider.getCredential(
+      idToken: credential.identityToken,
+      accessToken: credential.authorizationCode,
+    );
+
+    await _auth.signInWithCredential(authCredential);
   }
 
   Future<void> signOut() async {
     logger.i('Signing out...');
 
     await _auth.signOut();
+
     if (_googleSignIn.currentUser != null) {
       await _googleSignIn.signOut();
     }
@@ -104,5 +97,5 @@ class InvAuthService {
     logger.i('Signed out.');
   }
 
-  Future<bool> isAppleSignInAvailable() => AppleSignIn.isAvailable();
+  Future<bool> isAppleSignInAvailable() => SignInWithApple.isAvailable();
 }

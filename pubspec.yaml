@@ -11,7 +11,7 @@ description: Basic home inventory in Flutter
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.0.3+75
+version: 2.0.3+76
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
@@ -20,7 +20,6 @@ dependencies:
   flutter:
     sdk: flutter
   adaptive_dialog: ^0.6.3+1
-  apple_sign_in: ^0.1.0
   cached_network_image: ^2.2.0+1
   clock: ^1.0.1
   cloud_firestore: ^0.13.5
@@ -47,6 +46,7 @@ dependencies:
   qr_flutter: ^3.2.0
   qr_mobile_vision: ^1.0.1+1
   rxdart: ^0.23.1
+  sign_in_with_apple: ^2.5.0
   url_launcher: ^5.4.5
   uuid: ^2.0.4
 
