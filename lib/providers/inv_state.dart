@@ -379,7 +379,8 @@ class InvState with ChangeNotifier {
       return;
     }
 
-    if (productBuilder.build() == getProduct(productBuilder.code)) {
+    if (productBuilder.build() == getProduct(productBuilder.code)
+        && productBuilder.imageFile == null) {
       logger.i('Product [${productBuilder.name}]: Information did not change. Ignoring.');
       return;
     }

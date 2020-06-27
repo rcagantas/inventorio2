@@ -62,6 +62,10 @@ class SettingsPage extends StatelessWidget {
                 FlatButton(
                   padding: EdgeInsets.all(8.0),
                   onPressed: () async {
+                    if (!await ScanPage.hasPermissions(context)) {
+                      return;
+                    }
+
                     var popped = await Navigator.pushNamed(context, ScanPage.ROUTE);
                     String uuid = popped?.toString() ?? '';
                     if (uuid.isNotEmpty) {

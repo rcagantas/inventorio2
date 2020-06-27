@@ -59,6 +59,11 @@ class MainPage extends StatelessWidget {
           floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
+
+              if (!await ScanPage.hasPermissions(context)) {
+                return;
+              }
+
               var popped = await Navigator.pushNamed(context, ScanPage.ROUTE);
               String code = popped?.toString() ?? '';
 

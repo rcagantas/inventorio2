@@ -1,10 +1,30 @@
+import 'package:adaptive_dialog/adaptive_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_mobile_vision/qr_camera.dart';
 
 class ScanPage extends StatefulWidget {
 
   static const ROUTE = '/scanBarcode';
+
+  static Future<bool> hasPermissions(BuildContext context) async {
+    if (!await Permission.camera.request().isGranted) {
+      var okCancel = await showOkCancelAlertDialog(
+          context: context,
+          title: 'Permission Required',
+          message: 'Scanning barcode requires camera access.'
+      );
+
+      if (okCancel == OkCancelResult.ok) {
+        await openAppSettings();
+      }
+
+      return false;
+    }
+
+    return true;
+  }
 
   @override
   _ScanPageState createState() => _ScanPageState();
@@ -65,6 +85,13 @@ class _ScanPageState extends State<ScanPage> {
                   Navigator.pop(context, code);
                 }
               },
+              notStartedBuilder: (context) => Center(
+                  child: SizedBox(
+                      height: 50.0,
+                      width: 50.0,
+                      child: Image.asset('resources/icons/icon_transparent.png', fit: BoxFit.cover,)
+                  )
+              ),
             ),
           );
         },
