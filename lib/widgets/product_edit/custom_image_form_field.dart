@@ -5,15 +5,18 @@ import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_native_image/flutter_native_image.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CustomImageFormField extends StatefulWidget {
   final String heroCode;
   final String initialUrl;
-  final String attribute;
+  final String imageAttribute;
+  final String resizedAttribute;
 
   CustomImageFormField({
-    @required this.attribute,
+    @required this.imageAttribute,
+    @required this.resizedAttribute,
     @required this.heroCode,
     @required this.initialUrl,
   });
@@ -25,6 +28,7 @@ class CustomImageFormField extends StatefulWidget {
 class _CustomImageFormFieldState extends State<CustomImageFormField> {
 
   File imageFile;
+  final ImagePicker imagePicker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
@@ -64,10 +68,14 @@ class _CustomImageFormFieldState extends State<CustomImageFormField> {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () async {
-                    imageFile = await ImagePicker.pickImage(source: ImageSource.camera);
+                    var pickedFile = await imagePicker.getImage(source: ImageSource.camera);
+                    imageFile = File(pickedFile.path);
                     if (imageFile != null) {
+                      Future<File> resizedFuture = FlutterNativeImage
+                              .compressImage(imageFile.path, percentage: 25, quality: 80);
                       setState(() {
-                        formState.setAttributeValue(widget.attribute, imageFile);
+                        formState.setAttributeValue(widget.imageAttribute, imageFile);
+                        formState.setAttributeValue(widget.resizedAttribute, resizedFuture);
                       });
                     }
                   },

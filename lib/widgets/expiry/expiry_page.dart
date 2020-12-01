@@ -1,6 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_cupertino_date_picker/flutter_cupertino_date_picker.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_product.dart';
 import 'package:inventorio2/providers/inv_state.dart';
@@ -108,23 +108,21 @@ class _ExpiryPageState extends State<ExpiryPage> {
               Flexible(
                 child: SizedBox(
                   height: media.size.height / 3,
-                  child: DatePickerWidget(
-                    minDateTime: itemBuilder.expiryDate.subtract(Duration(days: 365)),
-                    maxDateTime: itemBuilder.expiryDate.add(Duration(days: 365 * 10)),
-                    onMonthChangeStartWithFirstDate: true,
-                    initialDateTime: itemBuilder.expiryDate,
-                    dateFormat: 'yyyy MMMM d',
-                    locale: DATETIME_PICKER_LOCALE_DEFAULT,
-
-                    onChange: (dateTime, selectedIndex) {
-                      itemBuilder.expiryDate = dateTime.add(Duration(minutes: 2));
-                    },
-
-                    pickerTheme: DateTimePickerTheme(
-                      showTitle: false,
-                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                      itemTextStyle: Theme.of(context).textTheme.headline5,
-                      itemHeight: 50.0 * media.textScaleFactor,
+                  child: CupertinoTheme(
+                    data: CupertinoThemeData(
+                      brightness: Theme.of(context).brightness,
+                      primaryColor: Theme.of(context).primaryColor,
+                      textTheme: CupertinoTextThemeData(
+                        dateTimePickerTextStyle: Theme.of(context).textTheme.headline6
+                      ),
+                    ),
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      onDateTimeChanged: (value) {
+                        itemBuilder.expiryDate = value.add(Duration(minutes: 2));
+                      },
+                      initialDateTime: itemBuilder.expiryDate,
+                      minimumYear: itemBuilder.expiryDate.year,
                     ),
                   ),
                 ),

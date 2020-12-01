@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:clock/clock.dart';
 import 'package:dart_extensions_methods/dart_extensions_methods.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_native_image/flutter_native_image.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inventorio2/models/inv_auth.dart';
 import 'package:inventorio2/models/inv_expiry.dart';
@@ -394,24 +393,14 @@ class InvState with ChangeNotifier {
     await _updateProductWithImage(productBuilder);
   }
 
-  Future<File> _compressImage(InvProductBuilder productBuilder) async {
-    Stopwatch stopwatch = Stopwatch()..start();
-
-    File resized = await FlutterNativeImage.compressImage(productBuilder.imageFile.path, percentage: 16);
-    ImageProperties properties = await FlutterNativeImage.getImageProperties(resized.path);
-    logger.i('Resized ${resized.path} to ${properties.height}:${properties.width} [${stopwatch.elapsedMilliseconds}] ms');
-
-    stopwatch.stop();
-    return resized;
-  }
-
   Future<void> _updateProductWithImage(InvProductBuilder productBuilder) async {
 
-    if (productBuilder.imageFile == null) {
+    if (productBuilder.resizedImageFileFuture == null) {
       return;
     }
 
-    File resized = await _compressImage(productBuilder);
+    File resized = await productBuilder.resizedImageFileFuture;
+
     String imageUrl = await _invStoreService.uploadProductImage(productBuilder.code, resized);
     productBuilder.imageUrl = imageUrl;
 

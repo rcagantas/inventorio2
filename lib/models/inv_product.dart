@@ -72,6 +72,8 @@ class InvProductBuilder {
   String imageUrl;
   String heroCode;
   File imageFile;
+  Future<File> resizedImageFileFuture;
+
   bool unset;
 
   InvProductBuilder({
@@ -80,7 +82,6 @@ class InvProductBuilder {
     this.brand,
     this.variant,
     this.imageUrl,
-    this.imageFile,
     this.unset,
     this.heroCode
   });
