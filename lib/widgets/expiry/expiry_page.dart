@@ -122,7 +122,6 @@ class _ExpiryPageState extends State<ExpiryPage> {
                         itemBuilder.expiryDate = value.add(Duration(minutes: 2));
                       },
                       initialDateTime: itemBuilder.expiryDate,
-                      minimumYear: itemBuilder.expiryDate.year,
                     ),
                   ),
                 ),
