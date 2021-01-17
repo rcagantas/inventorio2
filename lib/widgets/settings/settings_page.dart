@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:inventorio2/models/inv_meta.dart';
 import 'package:inventorio2/providers/inv_state.dart';
 import 'package:inventorio2/providers/user_state.dart';
+import 'package:inventorio2/widgets/inv_key.dart';
 import 'package:inventorio2/widgets/inventory_edit/inventory_edit_page.dart';
 import 'package:inventorio2/widgets/scan/scan_page.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +19,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<UserState, InvState>(
       builder: (context, userState, invState, child) => Scaffold(
+        key: InvKey.SETTINGS_PAGE,
         appBar: AppBar(title: Text('Settings'),),
         body: Column(
           children: <Widget>[

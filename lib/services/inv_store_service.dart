@@ -28,7 +28,7 @@ class InvStoreService {
   static const String PRODUCTS = 'productDictionary';
   static const String IMAGES = 'images';
 
-  Firestore store;
+  FirebaseFirestore store;
   FirebaseStorage storage;
   String _currentVersion;
 
@@ -46,19 +46,19 @@ class InvStoreService {
   }
 
   Stream<InvUser> listenToUser(String uid) {
-    return _users.document(uid).snapshots()
+    return _users.doc(uid).snapshots()
         .map((event) {
           return event.exists
-              ? InvUser.fromJson(event.data)
+              ? InvUser.fromJson(event.data())
               : InvUser.unset(userId: uid);
         });
   }
 
   Stream<InvMeta> listenToInventoryMeta(String invMetaId) {
-    return _inventory.document(invMetaId).snapshots()
+    return _inventory.doc(invMetaId).snapshots()
         .map((event) {
           return event.exists
-              ? InvMeta.fromJson(event.data)
+              ? InvMeta.fromJson(event.data())
               : InvMeta(uuid: invMetaId);
         });
   }
@@ -68,62 +68,63 @@ class InvStoreService {
       return InvMeta.unset(uuid: uuid);
     }
     
-    return _inventory.document(uuid).get()
+    return _inventory.doc(uuid).get()
         .then((value) {
           return value.exists
-            ? InvMeta.fromJson(value.data)
+            ? InvMeta.fromJson(value.data())
             : InvMeta.unset(uuid: uuid);
         });
   }
 
   Stream<List<InvItem>> listenToInventoryList(String invMetaId) {
-    return _inventory.document(invMetaId).collection(ITEMS).snapshots()
-        .map((event) => event.documents
-          .map((e) => InvItem.fromJson(e.data))
+    return _inventory.doc(invMetaId).collection(ITEMS).snapshots()
+        .map((event) => event.docs
+          .map((e) => InvItem.fromJson(e.data()))
           .map((e) => e.ensureValid(invMetaId))
           .toList());
   }
 
   Stream<InvProduct> listenToProduct(String code) {
-    return _products.document(code).snapshots()
+    return _products.doc(code).snapshots()
         .map((event) {
           return event.exists
-              ? InvProduct.fromJson(event.data)
+              ? InvProduct.fromJson(event.data())
               : InvProduct.unset(code: code);
         });
   }
 
   Future<InvProduct> fetchProduct(String code) async {
-    return await _products.document(code).get().then((value) {
+    return await _products.doc(code).get().then((value) {
       return value.exists
-          ? InvProduct.fromJson(value.data)
+          ? InvProduct.fromJson(value.data())
           : InvProduct.unset(code: code);
     });
   }
 
   Stream<InvProduct> listenToLocalProduct(String invMetaId, String code) {
-    return _inventory.document(invMetaId).collection(PRODUCTS)
-        .document(code)
+    return _inventory.doc(invMetaId).collection(PRODUCTS)
+        .doc(code)
         .snapshots()
         .map((event) {
           return event.exists
-              ? InvProduct.fromJson(event.data)
+              ? InvProduct.fromJson(event.data())
               : InvProduct.unset(code: code);
         });
   }
 
   Future<InvProduct> fetchLocalProduct(String invMetaId, String code) async {
-    return _inventory.document(invMetaId).collection(PRODUCTS)
-        .document(code)
+    return _inventory.doc(invMetaId).collection(PRODUCTS)
+        .doc(code)
         .get()
         .then((value) {
           return value.exists
-              ? InvProduct.fromJson(value.data)
+              ? InvProduct.fromJson(value.data())
               : InvProduct.unset(code: code);
         });
   }
 
   InvMetaBuilder createNewMeta(String createdByUid) {
+    logger.i('Creating new meta for $createdByUid');
     return InvMetaBuilder(
       createdBy: createdByUid,
       name: 'Inventory',
@@ -138,7 +139,8 @@ class InvStoreService {
     var userBuilder = InvUserBuilder(
         currentInventoryId: metaBuilder.uuid,
         knownInventories: [metaBuilder.uuid],
-        userId: uid
+        userId: uid,
+        currentVersion: _currentVersion
     );
 
     logger.i('Creating new user ${userBuilder.toJson()}');
@@ -149,17 +151,19 @@ class InvStoreService {
   Future<InvUser> updateUser(InvUserBuilder userBuilder) async {
     userBuilder.currentVersion = _currentVersion;
     InvUser user = userBuilder.build();
-    await _users.document(user.userId).setData(user.toJson());
+    logger.d('Updating user ${user.toJson()}');
+    await _users.doc(user.userId).set(user.toJson());
     return user;
   }
 
   Future<InvMeta> updateMeta(InvMetaBuilder metaBuilder) async {
     var meta = metaBuilder.build();
-    await _inventory.document(meta.uuid).setData(meta.toJson());
+    logger.d('Updating meta ${meta.toJson()}');
+    await _inventory.doc(meta.uuid).set(meta.toJson());
     return meta;
   }
 
-  Future migrateUserFromGoogleIdIfPossible(InvAuth invAuth) async {
+  Future<void> migrateUserFromGoogleIdIfPossible(InvAuth invAuth) async {
     var firebaseUid = invAuth.uid;
     var googleSignInId = invAuth.googleSignInId;
 
@@ -167,14 +171,14 @@ class InvStoreService {
       return;
     }
 
-    DocumentSnapshot googleSnapshot = await _users.document(googleSignInId).get();
-    DocumentSnapshot firebaseSnapshot = await _users.document(firebaseUid).get();
+    DocumentSnapshot googleSnapshot = await _users.doc(googleSignInId).get();
+    DocumentSnapshot firebaseSnapshot = await _users.doc(firebaseUid).get();
 
     if (googleSnapshot.exists && !firebaseSnapshot.exists) {
       logger.i('Migrating gId $googleSignInId to $firebaseUid');
 
-      InvUser googleInvUser = InvUser.fromJson(googleSnapshot.data);
-      await _users.document(firebaseUid).setData(InvUser(
+      InvUser googleInvUser = InvUser.fromJson(googleSnapshot.data());
+      await _users.doc(firebaseUid).set(InvUser(
         userId: firebaseUid,
         currentInventoryId: googleInvUser.currentInventoryId,
         knownInventories: googleInvUser.knownInventories
@@ -183,29 +187,31 @@ class InvStoreService {
   }
 
   Future<void> deleteItem(InvItem item) async {
-    await _inventory.document(item.inventoryId)
+    logger.d('Deleting item ${item.toJson()}');
+    await _inventory.doc(item.inventoryId)
         .collection(ITEMS)
-        .document(item.uuid)
+        .doc(item.uuid)
         .delete();
   }
 
   Future<void> updateItem(InvItemBuilder itemBuilder) async {
     var item = itemBuilder.build();
-    await _inventory.document(item.inventoryId)
+    logger.d('Updating item ${item.toJson()}');
+    await _inventory.doc(item.inventoryId)
         .collection(ITEMS)
-        .document(item.uuid)
-        .setData(item.toJson());
+        .doc(item.uuid)
+        .set(item.toJson());
   }
 
   Future<void> updateProduct(InvProductBuilder productBuilder, String inventoryId) async {
     var product = productBuilder.build();
-    await _inventory.document(inventoryId)
+    await _inventory.doc(inventoryId)
         .collection(PRODUCTS)
-        .document(product.code)
-        .setData(product.toJson());
+        .doc(product.code)
+        .set(product.toJson());
 
-    await _products.document(product.code)
-        .setData(product.toJson());
+    await _products.doc(product.code)
+        .set(product.toJson());
   }
 
   Future<String> uploadProductImage(String code, File image) async {

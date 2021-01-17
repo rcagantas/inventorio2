@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:inventorio2/widgets/inv_key.dart';
 
 class LoadingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      key: InvKey.LOADING_PAGE,
       child: Center(
         child: Stack(
           children: <Widget>[

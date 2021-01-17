@@ -1,6 +1,6 @@
-import 'package:clock/clock.dart';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get_it/get_it.dart';
 import 'package:inventorio2/models/inv_auth.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_meta.dart';
@@ -8,217 +8,335 @@ import 'package:inventorio2/models/inv_product.dart';
 import 'package:inventorio2/models/inv_status.dart';
 import 'package:inventorio2/models/inv_user.dart';
 import 'package:inventorio2/providers/inv_state.dart';
-import 'package:inventorio2/services/inv_scheduler_service.dart';
-import 'package:inventorio2/services/inv_store_service.dart';
+
+import 'package:logger/logger.dart';
 import 'package:mockito/mockito.dart';
 
 import '../mocks.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   InvState invState;
   InvStoreServiceMock storeServiceMock;
+  InvSchedulerServiceMock schedulerServiceMock;
+  ClockMock clockMock;
+  MockCollection mocks = MockCollection();
+  MockPluginsManager mockPluginsManager = MockPluginsManager();
 
-  setUp(() {
-    var frozenDate = DateTime.parse('2020-03-28T15:26:00');
-    InvItem.clock = ClockMock();
-    when(InvItem.clock.now()).thenReturn(frozenDate);
+  group('Inv State Provider', () {
 
-    GetIt.instance.reset();
-    GetIt.instance.registerLazySingleton<InvStoreService>(() => InvStoreServiceMock());
-    GetIt.instance.registerLazySingleton<InvSchedulerService>(() => InvSchedulerServiceMock());
+    setUp(() async {
+      Logger.level = Level.debug;
 
-    storeServiceMock = GetIt.instance.get<InvStoreService>();
-    when(storeServiceMock.listenToUser(any)).thenAnswer((realInvocation) {
-      var userId = realInvocation.positionalArguments[0];
-      return Stream.value(InvUser(
-          userId: userId,
-          currentInventoryId: 'inv_id',
-          knownInventories: ['inv_id', 'inv_id2']
-      ));
+      mockPluginsManager.setupDefaultMockValues();
+      await mocks.initMocks();
+
+      storeServiceMock = mocks.storeServiceMock;
+      schedulerServiceMock = mocks.schedulerServiceMock;
+      clockMock = mocks.clockMock;
+
+      invState = new InvState();
     });
 
-    when(storeServiceMock.listenToInventoryList(any)).thenAnswer((realInvocation) {
-      var expiry1 = frozenDate.toIso8601String(),
-          expiry2 = frozenDate.subtract(Duration(days: 2)).toIso8601String(),
-          expiry3 = frozenDate.subtract(Duration(days: 1)).toIso8601String();
-      var added1 = frozenDate.toIso8601String(),
-          added2 = frozenDate.add(Duration(days: 1)).toIso8601String(),
-          added3 = frozenDate.add(Duration(days: 2)).toIso8601String();
+    test('should load user on state change', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
 
-      return Stream.value([
-        InvItem(uuid: 'item_uid_1', code: '01', inventoryId: 'inv_id', expiry: expiry1, dateAdded: added1),
-        InvItem(uuid: 'item_uid_2', code: '02', inventoryId: 'inv_id', expiry: expiry2, dateAdded: added2),
-        InvItem(uuid: 'item_uid_3', code: '03', inventoryId: 'inv_id', expiry: expiry3, dateAdded: added3),
-      ]);
-    });
-
-    when(storeServiceMock.listenToInventoryMeta(any)).thenAnswer((realInvocation) {
-      var metaId = realInvocation.positionalArguments[0];
-      return Stream.value(InvMeta(uuid: metaId, createdBy: 'user_id', name: 'inventory'));
-    });
-
-    when(storeServiceMock.listenToProduct(any)).thenAnswer((realInvocation) {
-      var code = realInvocation.positionalArguments[0];
-      return Stream.value(InvProduct(code: code, name: 'product_$code', brand: 'brand_$code', variant: 'variant_$code'));
-    });
-
-    when(storeServiceMock.listenToLocalProduct(any, any)).thenAnswer((realInvocation) {
-      var code = realInvocation.positionalArguments[1];
-      return Stream.value(InvProduct(code: code, name: 'product_$code', brand: 'brand_$code', variant: 'variant_$code'));
-    });
-
-    when(storeServiceMock.fetchProduct(any)).thenAnswer((realInvocation) {
-      var code = realInvocation.positionalArguments[0];
-      return Future.value(InvProduct(code: code, name: 'product_$code', brand: 'brand_$code', variant: 'variant_$code'));
-    });
-
-    when(storeServiceMock.fetchLocalProduct(any, any)).thenAnswer((realInvocation) {
-      var code = realInvocation.positionalArguments[1];
-      return Future.value(InvProduct(code: code, name: 'product_$code', brand: 'brand_$code', variant: 'variant_$code'));
-    });
-
-    when(storeServiceMock.createNewMeta(any)).thenAnswer((realInvocation) {
-      var createdByUid = realInvocation.positionalArguments[0];
-      return InvMetaBuilder(
-        name: 'new_inventory',
-        uuid: 'new_inv_id',
-        createdBy: createdByUid,
-      );
-    });
-
-    when(storeServiceMock.createNewUser(any)).thenAnswer((realInvocation) {
-      var userId = realInvocation.positionalArguments[0];
-      var meta = storeServiceMock.createNewMeta(userId);
-      return InvUser(
-        userId: userId,
-        knownInventories: [meta.uuid],
-        currentInventoryId: meta.uuid,
-      );
-    });
-  });
-
-  tearDown(() {
-    InvItem.clock = Clock();
-  });
-
-  test('should load user on state change', () async {
-    invState = InvState();
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-
-    expect(invState.isLoading(), isTrue);
-    await Future.delayed(Duration(milliseconds: 10), () {
-      verify(storeServiceMock.listenToUser('user_id')).called(1);
-      verify(storeServiceMock.listenToInventoryList('inv_id')).called(1);
-      verify(storeServiceMock.listenToInventoryMeta('inv_id')).called(1);
-      verify(storeServiceMock.listenToLocalProduct('inv_id', any)).called(3);
-      verify(storeServiceMock.listenToProduct(any)).called(3);
+      verify(storeServiceMock.listenToUser('user_1')).called(1);
+      verify(storeServiceMock.listenToInventoryList('inv_1')).called(1);
+      verify(storeServiceMock.listenToInventoryMeta('inv_1')).called(1);
+      verify(storeServiceMock.listenToLocalProduct('inv_1', any)).called(3);
+      verify(storeServiceMock.listenToProduct(any)).called(6);
       expect(invState.isLoading(), isFalse);
-      expect(invState.selectedInvMeta().uuid, 'inv_id');
-      expect(invState.invMetas.map((e) => e.uuid), ['inv_id', 'inv_id2']);
-      expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_2', 'item_uid_3', 'item_uid_1']);
-      expect(invState.inventoryItemCount('inv_id'), 3);
+      expect(invState.selectedInvMeta().uuid, 'inv_1');
+      expect(invState.invMetas.map((e) => e.uuid), ['inv_1', 'inv_2']);
+      Set<String> expected = new Set()..addAll(['item_1', 'item_2', 'item_3']);
+      expect(invState.selectedInvList().map((e) => e.uuid).toSet(), expected);
+      expect(invState.inventoryItemCount('inv_1'), 3);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
     });
-  });
 
-  test('should persist new user', () async {
-    when(storeServiceMock.listenToUser(any)).thenAnswer((realInvocation) {
-      var userId = realInvocation.positionalArguments[0];
-      return Stream.value(InvUser.unset(
-        userId: userId,
+    test('should return default meta if user not fully loaded', () async {
+      var meta = invState.selectedInvMeta();
+      expect(meta.name, 'Inventory');
+    });
+
+    test('should persist new user', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_3'));
+
+      verify(storeServiceMock.migrateUserFromGoogleIdIfPossible(any)).called(1);
+      verify(storeServiceMock.createNewUser('user_3')).called(1);
+    });
+
+    test('should migrate existing user from gId', () async {
+
+      storeServiceMock.updateUser(InvUserBuilder(
+          userId: 'google_sign_in_id',
+          currentInventoryId: 'inv_3',
+          knownInventories: ['inv_3'],
+          unset: false
       ));
+
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_4', googleSignInId: 'google_sign_in_id'));
+
+      expect(invState.invUser.currentInventoryId, 'inv_3');
     });
 
-    invState = InvState();
+    test('should cancel subscriptions on logout', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
 
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-    verify(storeServiceMock.migrateUserFromGoogleIdIfPossible(any)).called(1);
-    verify(storeServiceMock.createNewUser('user_id')).called(1);
-    verify(storeServiceMock.createNewMeta('user_id')).called(1);
-  });
-
-  test('should cancel subscriptions on logout', () async {
-    invState = InvState();
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-    await invState.clear();
-    expect(invState.invUser.unset, isTrue);
-  });
-
-  test('should listen to user changes', () async {
-    when(storeServiceMock.listenToUser(any)).thenAnswer((realInvocation) {
-      var userId = realInvocation.positionalArguments[0];
-      return Stream.fromIterable([
-        InvUser(
-            userId: userId,
-            currentInventoryId: 'inv_id',
-            knownInventories: ['inv_id', 'inv_id2']
-        ),
-        InvUser(
-            userId: userId,
-            currentInventoryId: 'inv_id2',
-            knownInventories: ['inv_id', 'inv_id2']
-        ),
-      ]);
-
+      await invState.clear();
+      expect(invState.invUser.unset, isTrue);
     });
 
-    invState = InvState();
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-    expect(invState.selectedInvMeta().name, 'Inventory');
-    await Future.delayed(Duration(milliseconds: 10), () {
-      expect(invState.selectedInvMeta().uuid, 'inv_id2');
-      expect(invState.invMetas.map((e) => e.uuid), ['inv_id', 'inv_id2']);
-    });
-  });
+    test('should listen to user changes', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
 
-  test('should toggle sorting by cycling modes', () async {
-    invState = InvState();
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
+      expect(invState.selectedInvMeta().name, 'Inventory');
 
-    expect(invState.sortingKey, InvSort.EXPIRY);
-    await Future.delayed(Duration(milliseconds: 10), () {
-      expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_2', 'item_uid_3', 'item_uid_1']);
-    });
+      storeServiceMock.updateUser(InvUserBuilder(
+          userId: 'user_1',
+          currentInventoryId: 'inv_2',
+          knownInventories: ['inv_1', 'inv_2']
+      ));
 
-    invState.toggleSort();
-    expect(invState.sortingKey, InvSort.DATE_ADDED);
-    await Future.delayed(Duration(milliseconds: 10), () {
-      expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_3', 'item_uid_2', 'item_uid_1']);
+      await invState.isReady();
+      expect(invState.selectedInvMeta().uuid, 'inv_2');
+      expect(invState.invMetas.map((e) => e.uuid), ['inv_1', 'inv_2']);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
     });
 
-    invState.toggleSort();
-    expect(invState.sortingKey, InvSort.PRODUCT);
-    await Future.delayed(Duration(milliseconds: 10), () {
-      expect(invState.selectedInvList().map((e) => e.uuid), ['item_uid_1', 'item_uid_2', 'item_uid_3']);
+    test('should toggle sorting by cycling modes', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      expect(invState.sortingKey, InvSort.EXPIRY);
+      expect(invState.selectedInvList().map((e) => e.uuid).toList(), ['item_1', 'item_2', 'item_3']);
+
+      invState.toggleSort();
+      expect(invState.sortingKey, InvSort.DATE_ADDED);
+      expect(invState.selectedInvList().map((e) => e.uuid).toList(), ['item_3', 'item_2', 'item_1']);
+
+      invState.toggleSort();
+      expect(invState.sortingKey, InvSort.PRODUCT);
+      expect(invState.selectedInvList().map((e) => e.uuid).toList(), ['item_1', 'item_2', 'item_3']);
     });
 
-  });
+    test('select inventory should update user', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
 
-  test('select inventory should update user', () async {
-    invState = InvState();
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-    await invState.selectInventory('inv_id2');
+      await invState.selectInventory('inv_2');
 
-    var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_id2';
-    var verification = verify(storeServiceMock.updateUser(captureAny))..called(1);
-    expect(verification.captured.single.currentInventoryId, expected.currentInventoryId);
-  });
+      var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_2';
+      var verification = verify(storeServiceMock.updateUser(captureAny));
+      expect(verification.captured.last.currentInventoryId, expected.currentInventoryId);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
 
-  test('selecting inv meta should select inventory', () async {
-    invState = InvState();
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-    await invState.selectInvMeta(InvMeta(uuid: 'inv_id2'));
+    test('should trigger load on selection of notification', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
 
-    var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_id2';
-    var verification = verify(storeServiceMock.updateUser(captureAny))..called(1);
-    expect(verification.captured.single.currentInventoryId, expected.currentInventoryId);
-  });
+      invState.onSelectNotification('inv_2');
 
-  test('should remove item', () async {
-    invState = InvState();
-    var item = InvItem(uuid: 'inv_uid_1', code: '01');
+      var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_2';
+      var verification = verify(storeServiceMock.updateUser(captureAny));
+      expect(verification.captured.last.currentInventoryId, expected.currentInventoryId);
+    });
 
-    await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_id'));
-    await invState.removeItem(item);
-    verify(storeServiceMock.deleteItem(item)).called(1);
+    test('selecting inv meta should select inventory', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      await invState.selectInvMeta(InvMeta(uuid: 'inv_2'));
+
+      var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_2';
+      var verification = verify(storeServiceMock.updateUser(captureAny));
+      expect(verification.captured.last.currentInventoryId, expected.currentInventoryId);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+    test('should remove item', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var item = InvItem(uuid: 'inv_1', code: '1');
+
+      await invState.removeItem(item);
+      verify(storeServiceMock.deleteItem(item)).called(1);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+    test('should update item', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var item = InvItem(uuid: 'inv_1', code: '1', inventoryId: 'inv_id1');
+      var itemBuilder = InvItemBuilder.fromItem(item);
+      itemBuilder.expiryDate = DateTime.now();
+
+      await invState.updateItem(itemBuilder);
+      verify(storeServiceMock.updateItem(itemBuilder)).called(1);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+    test('should not update item if the product is unset', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var item = InvItem(uuid: 'inv_1', code: '99', inventoryId: 'inv_id1');
+      var itemBuilder = InvItemBuilder.fromItem(item);
+
+      await invState.updateItem(itemBuilder);
+      verifyNever(storeServiceMock.updateItem(itemBuilder));
+    });
+
+    test('should not update product when user is unset', () async {
+      var builder = InvProductBuilder.fromProduct(invState.getProduct('1'), '')
+        ..brand = 'brand_1x';
+      await invState.updateProduct(builder);
+      verifyNever(storeServiceMock.updateProduct(builder, 'inv_1'));
+    });
+
+    test('should not update product if product never changed', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var builder = InvProductBuilder.fromProduct(invState.getProduct('1'), '');
+      await invState.updateProduct(builder);
+      verifyNever(storeServiceMock.updateProduct(builder, 'inv_1'));
+    });
+
+    test('should update product', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var builder = InvProductBuilder.fromProduct(invState.getProduct('1'), '')
+        ..brand = 'brand_1x';
+      await invState.updateProduct(builder);
+      verify(storeServiceMock.updateProduct(builder, 'inv_1')).called(1);
+      expect(builder.build(), invState.getProduct('1'));
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+    test('should update product with image', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var imageFileMock = new FileMock();
+      var resizedFileMock = new FileMock();
+
+      var builder = InvProductBuilder.fromProduct(invState.getProduct('1'), '')
+        ..brand = 'brand_1x'
+        ..imageFile = imageFileMock
+        ..resizedImageFileFuture = Future<File>.value(resizedFileMock);
+
+      await invState.updateProduct(builder);
+      verify(storeServiceMock.updateProduct(builder, 'inv_1')).called(2);
+      expect(builder.build(), invState.getProduct('1'));
+      verify(imageFileMock.delete()).called(1);
+      verify(resizedFileMock.delete()).called(1);
+      expect(invState.getProduct('1').imageUrl, isNotNull);
+    });
+
+    test('should edit inventory name', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var builder = InvMetaBuilder.fromMeta(invState.selectedInvMeta())
+        ..name = 'new_inventory_name';
+      await invState.updateInvMeta(builder);
+      verify(storeServiceMock.updateMeta(builder)).called(1);
+
+      await Future.delayed(Duration(milliseconds: 10));
+      expect(invState.selectedInvMeta().name, 'new_inventory_name');
+    });
+
+    test('should unsubscribe from inventory', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var uuid = 'inv_2';
+      await invState.unsubscribeFromInventory(uuid);
+
+      var builder = InvUserBuilder.fromUser(invState.invUser)
+        ..currentVersion = '1.0.0 build 100'
+        ..knownInventories.remove(uuid);
+
+      verify(storeServiceMock.updateUser(builder)).called(1);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+
+    test('should select first inventory if unsubscribing from currently selected inventory', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var uuid = 'inv_1';
+      await invState.unsubscribeFromInventory(uuid);
+
+      var builder = InvUserBuilder.fromUser(invState.invUser)
+        ..currentVersion = '1.0.0 build 100'
+        ..currentInventoryId = 'inv_2'
+        ..knownInventories.remove(uuid);
+
+      verify(storeServiceMock.updateUser(builder)).called(1);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+    test('should add inventory', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var uuid = 'inv_3';
+      await invState.addInventory(uuid);
+
+      var builder = InvUserBuilder.fromUser(invState.invUser)
+        ..currentVersion = '1.0.0 build 100'
+        ..currentInventoryId = uuid
+        ..knownInventories.add(uuid);
+
+      verify(storeServiceMock.fetchInvMeta(uuid)).called(1);
+      verify(storeServiceMock.updateUser(builder)).called(1);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+    test('should select inventory if trying to add existing uuid', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var uuid = 'inv_2';
+      await invState.addInventory(uuid);
+
+      var builder = InvUserBuilder.fromUser(invState.invUser)
+        ..currentVersion = '1.0.0 build 100'
+        ..currentInventoryId = uuid
+        ..knownInventories.add(uuid);
+
+      verify(storeServiceMock.fetchInvMeta(uuid)).called(1);
+      verifyNever(storeServiceMock.updateUser(builder));
+
+      var expected = InvUserBuilder.fromUser(invState.invUser)..currentInventoryId = 'inv_2';
+      var verification = verify(storeServiceMock.updateUser(captureAny));
+      expect(verification.captured.last.currentInventoryId, expected.currentInventoryId);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
+
+    test('should behave if trying to add inventory that does not exist', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      var uuid = 'inv_bogus';
+      await invState.addInventory(uuid);
+
+      var builder = InvUserBuilder.fromUser(invState.invUser)
+        ..currentVersion = '1.0.0 build 100'
+        ..currentInventoryId = uuid
+        ..knownInventories.add(uuid);
+
+      verify(storeServiceMock.fetchInvMeta(uuid)).called(1);
+      verifyNever(storeServiceMock.updateUser(builder));
+    });
+
+    test('should create new inventory', () async {
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      invState.createNewInventory();
+      verify(storeServiceMock.createNewMeta(invState.invUser.userId)).called(1);
+    });
+
+    test('should run scheduler even if all the items have not fully loaded their products', () async {
+
+      storeServiceMock.itemFactory(3,  4, clockMock.now(), 'inv_1');
+      await invState.userStateChange(status: InvStatus.Authenticated, auth: InvAuth(uid: 'user_1'));
+
+      verify(schedulerServiceMock.clearScheduledTasks()).called(1);
+      verify(schedulerServiceMock.delayedScheduleNotification(any, any)).called(greaterThan(0));
+    });
   });
 }

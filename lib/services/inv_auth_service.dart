@@ -17,12 +17,12 @@ class InvAuthService {
   FirebaseAuth _auth;
   GoogleSignIn _googleSignIn;
 
-  Stream<InvAuth> get onAuthStateChanged => _auth.onAuthStateChanged.map((user) {
+  Stream<InvAuth> get onAuthStateChanged => _auth.authStateChanges().map((user) {
     return user == null ? null : InvAuth(
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      photoUrl: user.photoUrl,
+      photoUrl: user.photoURL,
       googleSignInId: _googleSignIn.currentUser?.id
     );
   });
@@ -55,12 +55,12 @@ class InvAuthService {
     }
 
     GoogleSignInAuthentication googleCredential = await googleAccount.authentication;
-    AuthCredential authCredential = GoogleAuthProvider.getCredential(
+    AuthCredential authCredential = GoogleAuthProvider.credential(
         idToken: googleCredential.idToken,
         accessToken: googleCredential.accessToken
     );
 
-    _auth.signInWithCredential(authCredential);
+    await _auth.signInWithCredential(authCredential);
   }
 
   Future<void> signInWithApple() async {
@@ -74,10 +74,8 @@ class InvAuthService {
       throw InvAuthFailure('Failed to sign-in with Apple');
     }
 
-    logger.i('cred: $credential');
-
-    OAuthProvider oAuthProvider = new OAuthProvider(providerId: 'apple.com');
-    AuthCredential authCredential = oAuthProvider.getCredential(
+    OAuthProvider oAuthProvider = new OAuthProvider('apple.com');
+    AuthCredential authCredential = oAuthProvider.credential(
       idToken: credential.identityToken,
       accessToken: credential.authorizationCode,
     );

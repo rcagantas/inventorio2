@@ -3,12 +3,15 @@ import 'package:flutter/widgets.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/providers/inv_state.dart';
 import 'package:inventorio2/widgets/expiry/expiry_page.dart';
+import 'package:inventorio2/widgets/inv_key.dart';
 import 'package:inventorio2/widgets/main/item_card.dart';
 import 'package:inventorio2/widgets/main/item_search_delegate.dart';
 import 'package:inventorio2/widgets/main/title_card.dart';
 import 'package:inventorio2/widgets/scan/scan_page.dart';
 import 'package:inventorio2/widgets/settings/settings_page.dart';
 import 'package:provider/provider.dart';
+
+
 
 class MainPage extends StatelessWidget {
 
@@ -32,6 +35,7 @@ class MainPage extends StatelessWidget {
           appBar: AppBar(
             title: Text('${invState.selectedInvMeta().name}'),
             leading: FlatButton(
+              key: InvKey.MENU_BUTTON,
               padding: EdgeInsets.all(10.0),
               child: Image.asset('resources/icons/icon_small_white.png', fit: BoxFit.cover,),
               onPressed: () async {
@@ -58,7 +62,8 @@ class MainPage extends StatelessWidget {
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () async {
+              key: InvKey.SCAN_BUTTON,
+              onPressed: () async {
 
               if (!await ScanPage.hasPermissions(context)) {
                 return;

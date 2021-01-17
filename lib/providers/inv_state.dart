@@ -25,7 +25,6 @@ enum InvSort {
 
 class InvState with ChangeNotifier {
   final logger = Logger(printer: SimpleLogPrinter('InvState'));
-  Clock clock = Clock();
 
   InvStatus currentInvStatus;
   InvUser invUser;
@@ -34,6 +33,7 @@ class InvState with ChangeNotifier {
   Map<String, InvProduct> _invProductMap = {};
   Map<String, InvProduct> _invLocalProductMap = {};
 
+  final Clock _clock;
   final InvStoreService _invStoreService;
   final InvSchedulerService _invSchedulerService;
 
@@ -56,23 +56,44 @@ class InvState with ChangeNotifier {
   }
 
   InvState() :
+    _clock = GetIt.instance<Clock>(),
     _invStoreService = GetIt.instance<InvStoreService>(),
     _invSchedulerService = GetIt.instance<InvSchedulerService>()
   {
     invUser = InvUser.unset(userId: null);
-    _invSchedulerService.initialize(
-      onSelectNotification: (metaId) async {
-        logger.i('Selecting notification with payload $metaId');
-        await selectInventory(metaId);
-      },
-    );
-
+    _invSchedulerService.initialize(onSelectNotification: onSelectNotification);
     _sortingFunctionMap = {
       InvSort.EXPIRY: expirySort,
       InvSort.DATE_ADDED: dateSort,
       InvSort.PRODUCT: productSort
     };
 
+  }
+
+  Future<void> onSelectNotification(String metaId) async {
+    logger.i('Selecting notification with payload $metaId');
+    await selectInventory(metaId);
+  }
+
+  Future<bool> _checkForFinalizedList() async {
+    await Future.delayed(Duration(milliseconds: 50));
+    var listToSchedule = _invItemMap.values.expand((e) => e).toList();
+
+    for (InvItem item in listToSchedule) {
+      var product = getProduct(item.code);
+
+      if (product.unset)  {
+        return true;
+      }
+    }
+
+    await _runSchedulerWhenListComplete();
+    return false;
+  }
+
+  Future<void> isReady() async {
+    return Future.doWhile(() => _checkForFinalizedList())
+        .timeout(Duration(milliseconds: 500), onTimeout: _runSchedulerWhenListComplete);
   }
 
   Future<void> userStateChange({InvStatus status, InvAuth auth}) async {
@@ -107,6 +128,7 @@ class InvState with ChangeNotifier {
 
     await _invStoreService.migrateUserFromGoogleIdIfPossible(invAuth);
     await _subscribeToUser(invAuth.uid);
+    await isReady();
   }
 
   Future<void> _cancelSubscriptions() async {
@@ -136,7 +158,7 @@ class InvState with ChangeNotifier {
       logger.i('Creating new user ${user.userId}');
       invUser = _invStoreService.createNewUser(user.userId);
     } else {
-      logger.i('Loading existing user ${user.userId}');
+      logger.i('Loading user ${user.userId}');
       invUser = user;
     }
 
@@ -171,21 +193,15 @@ class InvState with ChangeNotifier {
     });
   }
 
-  void _runSchedulerWhenListComplete() async {
-    var population = invUser.knownInventories
-        .countWhere((element) => _invItemMap.containsKey(element));
-
-    if (population != invUser.knownInventories.length) {
-      return;
-    }
-
+  Future<void> _runSchedulerWhenListComplete() async {
     var listToSchedule = _invItemMap.values.expand((e) => e).toList();
     var expiryList = <InvExpiry>[];
 
     for (InvItem item in listToSchedule) {
-      var product = await fetchProduct(item.code);
-      if (product.unset) {
-        logger.e('Product information is not ready. Skipping scheduling for ${item.uuid}.');
+      var product = getProduct(item.code);
+
+      if (product.unset)  {
+        logger.w('Product information is not ready. Deferred scheduling for ${item.uuid}.');
         continue;
       }
 
@@ -193,22 +209,20 @@ class InvState with ChangeNotifier {
       expiryList.add(InvExpiry(item: item, product: product, daysOffset: item.yellowOffset));
     }
 
-    var now = clock.now();
+    var now = _clock.now();
     expiryList..removeWhere((element) => element.alertDate.compareTo(now) < 0)..sort();
     expiryList = expiryList.sublist(0, expiryList.length > 64? 64 : expiryList.length);
 
     await _invSchedulerService.clearScheduledTasks();
     logger.i('Running scheduler for ${expiryList.length} items');
 
-    Future.delayed(Duration(milliseconds: 500), () {
-      for (var expiry in expiryList) {
-        var delayMs = 50 * expiryList.indexOf(expiry);
-        _invSchedulerService.delayedScheduleNotification(expiry, delayMs);
-      }
-    });
+    for (var expiry in expiryList) {
+      var delayMs = 50 * expiryList.indexOf(expiry);
+      _invSchedulerService.delayedScheduleNotification(expiry, delayMs);
+    }
   }
 
-  void _onInvList(String invMetaId, List<InvItem> list) async {
+  void _onInvList(String invMetaId, List<InvItem> list) {
     _invItemMap[invMetaId] = list;
 
     if (list.isNotNullOrEmpty()) {
@@ -218,10 +232,6 @@ class InvState with ChangeNotifier {
         _subscribeToProduct(invMetaId, invItem.code);
       }
     }
-
-    notifyListeners();
-
-    _runSchedulerWhenListComplete();
   }
 
   void _subscribeToProduct(String invMetaId, String code) {
@@ -374,13 +384,13 @@ class InvState with ChangeNotifier {
 
   Future<void> updateProduct(InvProductBuilder productBuilder) async {
     if (invUser.currentInventoryId.isNullOrEmpty()) {
-      logger.e('User is unset or currentInventoryId is unset');
+      logger.w('User is unset or currentInventoryId is unset');
       return;
     }
 
     if (productBuilder.build() == getProduct(productBuilder.code)
         && productBuilder.imageFile == null) {
-      logger.i('Product [${productBuilder.name}]: Information did not change. Ignoring.');
+      logger.w('Product [${productBuilder.name}]: Information did not change. Ignoring.');
       return;
     }
 
@@ -417,13 +427,6 @@ class InvState with ChangeNotifier {
     }
 
     await _invStoreService.updateMeta(invMetaBuilder);
-
-    if (!invUser.knownInventories.contains(invMetaBuilder.uuid)) {
-      logger.i('Adding inventory ${invMetaBuilder.uuid}');
-      var userBuilder = InvUserBuilder.fromUser(invUser)
-        ..knownInventories.add(invMetaBuilder.uuid);
-      await _invStoreService.updateUser(userBuilder);
-    }
   }
 
   Future<void> unsubscribeFromInventory(String uuid) async {
@@ -445,7 +448,13 @@ class InvState with ChangeNotifier {
   Future<InvMeta> addInventory(String uuid) async {
     var meta = await _invStoreService.fetchInvMeta(uuid);
 
-    if (!invUser.knownInventories.contains(uuid) && !meta.unset) {
+    if (meta.unset) {
+      logger.e("trying to add inventory that doesn't exist!");
+      return meta;
+    }
+
+    if (!invUser.knownInventories.contains(uuid)) {
+      logger.i('Adding inventory $uuid');
       var userBuilder = InvUserBuilder.fromUser(invUser)
         ..currentInventoryId = uuid
         ..knownInventories.add(uuid);

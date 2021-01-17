@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:inventorio2/providers/user_state.dart';
+import 'package:inventorio2/widgets/inv_key.dart';
 import 'package:package_info/package_info.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -36,7 +37,7 @@ class LoginPage extends StatelessWidget {
                   FlatButton(
                     color: darkMode? Colors.white : Colors.blue,
                     textColor: darkMode? Colors.black: Theme.of(context).canvasColor,
-                    key: ObjectKey('google_sign_in'),
+                    key: InvKey.GOOGLE_SIGN_IN_BUTTON,
                     child: Row(
                       //mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -71,7 +72,7 @@ class LoginPage extends StatelessWidget {
                             : SignInWithAppleButtonStyle.black,
                           borderRadius: BorderRadius.all(Radius.circular(3.0)),
                           height: 40,
-                          key: ObjectKey('apple_sign_in'),
+                          key: InvKey.APPLE_SIGN_IN_BUTTON,
                           onPressed: () => userState.signInWithApple(),
                         ),
                       );

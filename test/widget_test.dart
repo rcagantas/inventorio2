@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,28 +19,30 @@ import 'package:mockito/mockito.dart';
 
 import 'mocks.dart';
 
+void main() {}
 
-void main() {
+void something() {
 
   group('Inventory Repo', () {
     InvState invState;
     InvStoreServiceMock invStoreServiceMock;
+    MockPluginsManager mockPluginsManager = MockPluginsManager();
 
     setUp(() {
+      mockPluginsManager.setupDefaultMockValues();
       GetIt.instance.reset();
+      GetIt.instance.registerSingleton<Clock>(ClockMock());
       GetIt.instance.registerLazySingleton<InvAuthService>(() => InvAuthServiceMock());
       GetIt.instance.registerLazySingleton<InvSchedulerService>(() => InvSchedulerServiceMock());
       GetIt.instance.registerLazySingleton<InvStoreService>(() => InvStoreServiceMock());
       GetIt.instance.registerLazySingleton(() => UserState());
       GetIt.instance.registerLazySingleton(() => InvState());
 
-
       invStoreServiceMock = GetIt.instance.get<InvStoreService>();
       when(invStoreServiceMock.listenToUser(any)).thenAnswer((realInvocation) => Stream.empty());
       when(invStoreServiceMock.migrateUserFromGoogleIdIfPossible(any)).thenAnswer((realInvocation) => Future.value());
       when(invStoreServiceMock.listenToInventoryList(any)).thenAnswer((realInvocation) => Stream.fromIterable([<InvItem>[]]));
       when(invStoreServiceMock.listenToInventoryMeta(any)).thenAnswer((realInvocation) => Stream.empty());
-
 
       invState = GetIt.instance.get<InvState>();
     });
@@ -89,9 +92,12 @@ void main() {
 
   group('Splash Screen', () {
     InvAuthServiceMock authServiceMock;
+    MockPluginsManager mockPluginsManager = MockPluginsManager();
 
     setUp(() async {
+      mockPluginsManager.setupDefaultMockValues();
       GetIt.instance.reset();
+      GetIt.instance.registerSingleton<Clock>(ClockMock());
       GetIt.instance.registerLazySingleton<InvAuthService>(() => InvAuthServiceMock());
       GetIt.instance.registerLazySingleton<InvSchedulerService>(() => InvSchedulerServiceMock());
       GetIt.instance.registerLazySingleton<InvStoreService>(() => InvStoreServiceMock());
@@ -105,7 +111,7 @@ void main() {
     testWidgets('should show splash screen on entry', (tester) async {
       await tester.pumpWidget(MyApp());
 
-      expect(find.byKey(ObjectKey('icon_small')), findsOneWidget);
+      expect(find.byKey(ObjectKey('inv_icon_splash')), findsOneWidget);
     });
 
     testWidgets('should show login screen when current login is unset', (tester) async {

@@ -17,12 +17,11 @@ class AuthPage extends StatelessWidget {
       builder: (context, userState, invState, child) {
         invState.userStateChange(status: userState.status, auth: userState.invAuth);
         switch (userState.status) {
-          case InvStatus.Uninitialized: return SplashPage();
-          case InvStatus.Authenticating: return LoadingPage();
           case InvStatus.Unauthenticated: return LoginPage();
+          case InvStatus.Authenticating: return LoadingPage();
           case InvStatus.Authenticated: return MainPage();
+          default: return SplashPage();
         }
-        return SplashPage();
       },
     );
   }

@@ -80,4 +80,9 @@ class InvUserBuilder {
   Map<String, dynamic> toJson() {
     return build().toJson();
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InvUserBuilder && this.toJson().toString() == other.toJson().toString();
+  }
 }

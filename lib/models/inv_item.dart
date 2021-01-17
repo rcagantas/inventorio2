@@ -1,5 +1,6 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,7 +17,7 @@ class InvItem {
   @JsonKey(ignore: true) final bool unset;
   @JsonKey(ignore: true) final int redOffset = 7;
   @JsonKey(ignore: true) final int yellowOffset = 30;
-  @JsonKey(ignore: true) static Clock clock = Clock();
+  @JsonKey(ignore: true) static Clock clock = GetIt.instance<Clock>();
 
   DateTime get expiryDate => expiry == null
       ? clock.now().add(Duration(days: 30))

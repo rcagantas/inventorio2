@@ -9,85 +9,94 @@ import 'package:mockito/mockito.dart';
 import '../mocks.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   UserState userState;
   InvAuthServiceMock invAuthServiceMock;
+  MockPluginsManager mockPluginsManager = MockPluginsManager();
 
-  setUp(() {
-    GetIt.instance.reset();
-    GetIt.instance.registerLazySingleton<InvAuthService>(() => InvAuthServiceMock());
+  group('User State Provider', () {
+    setUp(() {
+      mockPluginsManager.setupDefaultMockValues();
+      GetIt.instance.reset();
+      GetIt.instance.registerLazySingleton<InvAuthService>(() => InvAuthServiceMock());
 
-    invAuthServiceMock = GetIt.instance.get<InvAuthService>();
-    when(invAuthServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.empty());
+      invAuthServiceMock = GetIt.instance.get<InvAuthService>();
+      userState = UserState();
+    });
 
-    userState = UserState();
-  });
+    test('should sign-in with email', () {
+      userState.signInWithEmail('email', 'password');
 
-  test('sign-in with email', () {
-    userState.signInWithEmail('email', 'password');
+      verify(invAuthServiceMock.signInWithEmailAndPassword(email: 'email', password: 'password')).called(1);
+      expect(userState.status, InvStatus.Authenticating);
+    });
 
-    verify(invAuthServiceMock.signInWithEmailAndPassword(email: 'email', password: 'password')).called(1);
-    expect(userState.status, InvStatus.Authenticating);
-  });
+    test('should fail sign-in with email when service throw', () {
+      when(invAuthServiceMock.signInWithEmailAndPassword(email: anyNamed('email'), password: anyNamed('password')))
+          .thenThrow(Exception('failure'));
 
-  test('sign-in with email failure', () {
-    when(invAuthServiceMock.signInWithEmailAndPassword(email: anyNamed('email'), password: anyNamed('password')))
-        .thenThrow(Exception('failure'));
-
-    userState.signInWithEmail('email', 'password');
-    expect(userState.status, InvStatus.Unauthenticated);
-  });
-
-  test('sign-in with Google', () {
-    userState.signInWithGoogle();
-
-    verify(invAuthServiceMock.signInWithGoogle()).called(1);
-    expect(userState.status, InvStatus.Authenticating);
-  });
-
-  test('sign-in with Google failure', () async {
-    when(invAuthServiceMock.signInWithGoogle()).thenThrow(Exception('failure'));
-
-    await userState.signInWithGoogle();
-    expect(userState.status, InvStatus.Unauthenticated);
-  });
-
-  test('sign-in with Apple', () {
-    userState.signInWithApple();
-
-    verify(invAuthServiceMock.signInWithApple()).called(1);
-    expect(userState.status, InvStatus.Authenticating);
-  });
-
-  test('sign-in with Apple failure', () async {
-    when(invAuthServiceMock.signInWithApple()).thenThrow(Exception('failure'));
-
-    await userState.signInWithApple();
-    expect(userState.status, InvStatus.Unauthenticated);
-  });
-
-  test('sign-out', () async {
-    await userState.signOut();
-
-    verify(invAuthServiceMock.signOut()).called(1);
-    expect(userState.status, InvStatus.Unauthenticated);
-  });
-
-  test('auth state change to null', () async {
-    when(invAuthServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.value(null));
-
-    userState = UserState();
-
-    await Future.delayed(Duration(milliseconds: 30), () {
+      userState.signInWithEmail('email', 'password');
       expect(userState.status, InvStatus.Unauthenticated);
     });
-  });
 
-  test('new auth', () async {
-    when(invAuthServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.value(InvAuth(uid: 'uid')));
+    test('should sign-in with Google', () async {
+      var signIn = userState.signInWithGoogle();
+      expect(userState.status, InvStatus.Authenticating);
 
-    userState = UserState();
+      await signIn;
+      verify(invAuthServiceMock.signInWithGoogle()).called(1);
+      expect(userState.status, InvStatus.Authenticated);
+    });
 
-    await Future.delayed(Duration(milliseconds: 30), () {
+    test('should fail sign-in with Google when service throws', () async {
+      when(invAuthServiceMock.signInWithGoogle()).thenThrow(Exception('failure'));
+
+      await userState.signInWithGoogle();
+      expect(userState.status, InvStatus.Unauthenticated);
+    });
+
+    test('should sign-in with Apple', () async {
+      var signIn = userState.signInWithApple();
+
+      expect(userState.status, InvStatus.Authenticating);
+
+      await signIn;
+      verify(invAuthServiceMock.signInWithApple()).called(1);
+      expect(userState.status, InvStatus.Authenticated);
+    });
+
+    test('should fail sign-in with Apple when service throws', () async {
+      when(invAuthServiceMock.signInWithApple()).thenThrow(Exception('failure'));
+
+      await userState.signInWithApple();
+      expect(userState.status, InvStatus.Unauthenticated);
+    });
+
+    test('should sign-out', () async {
+      await userState.signInWithGoogle();
+
+      await userState.signOut();
+
+      verify(invAuthServiceMock.signOut()).called(1);
+      expect(userState.status, InvStatus.Unauthenticated);
+    });
+
+    test('should change auth state to null', () async {
+      when(invAuthServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.value(null));
+
+      userState = UserState();
+
+      await Future.delayed(Duration(milliseconds: 10));
+      expect(userState.status, InvStatus.Unauthenticated);
+    });
+
+    test('should have new UserState on new login', () async {
+      when(invAuthServiceMock.onAuthStateChanged).thenAnswer((realInvocation) => Stream.value(InvAuth(uid: 'uid')));
+
+      userState = UserState();
+
+      await Future.delayed(Duration(milliseconds: 10));
       expect(userState.status, InvStatus.Authenticated);
     });
   });

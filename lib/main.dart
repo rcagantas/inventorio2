@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -21,6 +22,7 @@ import 'package:provider/provider.dart';
 
 void register() {
   GetIt locator = GetIt.instance;
+  locator.registerSingleton<Clock>(Clock());
   locator.registerSingleton<InvSchedulerService>(InvSchedulerService(
     notificationsPlugin: FlutterLocalNotificationsPlugin()
   ));
@@ -29,7 +31,7 @@ void register() {
     googleSignIn: GoogleSignIn(),
   ));
   locator.registerLazySingleton(() => InvStoreService(
-    store: Firestore.instance,
+    store: FirebaseFirestore.instance,
     storage: FirebaseStorage.instance,
   ));
   locator.registerLazySingleton(() => UserState());

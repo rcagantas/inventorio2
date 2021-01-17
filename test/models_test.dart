@@ -1,5 +1,6 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inventorio2/models/inv_auth.dart';
 import 'package:inventorio2/models/inv_expiry.dart';
 import 'package:inventorio2/models/inv_item.dart';
 import 'package:inventorio2/models/inv_meta.dart';
@@ -443,6 +444,13 @@ void main() {
       var builder = InvUserBuilder(userId: 'userId', currentInventoryId: 'id', knownInventories: ['id2']);
       expect(() => builder.build(), throwsA(predicate((e) => e is UnsupportedError
           && e.message == 'InvUserBuilder cannot build with id not a member of [id2]')));
+    });
+  });
+
+  group('Auth', () {
+    test('should show email', () {
+      var auth = InvAuth(email: 'a@a.a', displayName: 'a', uid: 'a1');
+      expect(auth.emailDisplay, 'a@a.a');
     });
   });
 }
